@@ -1,20 +1,15 @@
+from Regions import *
 from  gwyfile import load as gwyload
 from  gwyfile.util import get_datafields 
 import pickle
-import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
-from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.cluster.hierarchy import fcluster
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import path ### just for "drawing" an polygon for later extraction of the values inside this polygon
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from richdem import rdarray, TerrainAttribute
 
-from io import StringIO 
-import sys
 
 import time
 
@@ -97,6 +92,7 @@ class clusterpic():
         self.pickable_artists = None
         self.event =None
         self.coor_regieons = []
+        self.regions = []
         self.heights = pd.DataFrame()
         self.cluster_distribution = None
         
@@ -449,7 +445,8 @@ class clusterpic():
         """
         
         if window is not None:
-            self.coor_regieons = []
+            region_type = 'rectangular'
+            self.regions = []
             for idx,i in enumerate(self.clusters_coord): # sclice data in to reagion bei squers
                 y_range = [int(i[1]-window), int(i[1]+window)]
                 if y_range[0] < 0:y_range[0] = 0 # if you hit the boundaries important for correction later see maxXX
@@ -471,10 +468,16 @@ class clusterpic():
                                           y+y_range[0],
                                           aslice[y][x]])  
                 #self.coor_regieons.update({idx:{'x_min_id_offset':x_range[0], 'y_min_id_offset':y_range[0],'slice':aslice,'xyz(max)':i}})
-                self.coor_regieons.append([np.array(slice_xyz),i]) 
-        
+                #self.coor_regieons.append([np.array(slice_xyz),i])
+                a_region = region()
+                a_region.region_id = idx
+                a_region.coordinates = np.array(slice_xyz)
+                a_region.cluster_peak_coordinates = np.array(i)
+                a_region.region_type = region_type
+                self.regions.append(a_region)
         else:
-            self.coor_regieons = []
+            self.regions = []
+            region_type = 'voronoi'
             vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
             regions, vertices = self.voronoi_finite_polygons_2d(vor)### conver regions in to finit regeons
             coor_regieons = []
@@ -485,7 +488,7 @@ class clusterpic():
             xyz_data = np.array(xyz_data)
             #start_time = time.time()
             xy_data = np.array([xyz_data[:,1],xyz_data[:,0]]).T ### reduce from 3XN to 2XN needed for matplotlib.path.path.contains_points
-            for i in regions: ##### Very Very slow need vectorization!!!!!!
+            for idx,i in enumerate(regions): ##### Very Very slow need vectorization!!!!!!
                 polygon_coord = path.Path(vertices[i]) ### extracting coordinates out of polygon
                 a2d_coordinates_of_area = polygon_coord.contains_points(xy_data,radius=0.0)
                 a3d_area = xyz_data[a2d_coordinates_of_area]
@@ -503,239 +506,17 @@ class clusterpic():
                         cluster_max_inthearea =(i[0],i[1],i[2])
                         breakIt = True
                         break
-                self.coor_regieons.append([a3d_area,np.array(cluster_max_inthearea)]) 
+                a_region = region()
+                a_region.region_id = idx
+                a_region.coordinates = a3d_area
+                a_region.cluster_peak_coordinates = np.array(cluster_max_inthearea)
+                a_region.region_type = region_type
+                self.regions.append(a_region) 
                 #self.coor_regieons.update({idx:{'x_min_id_offset':x_range[0], 'y_min_id_offset':y_range[0],'slice':aslice,'xyz(max)':cluster_max_inthearea}})
                 
-    def find_groundlevel(self, 
-                         region_data, 
-                         slope_threshold_factor = 0.1, 
-                         groundlevel_cutoff = 0.99, 
-                         ):
-        """
-        Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
-
-        Parametes:
-            region_data: list:
-                list of [(numpy.array, (x,y,z))] region cuted by cut_image_regions() and the coordinates of maximum of cluster inside the region (x,y,z)
-            slope_threshold_factor: float:
-                e.g. 0.01 means 1% of max-min sloap value would be consiedert as posible ground level points
-            groundlevel_cutoff: float:
-                e.g. 0.3 means all values in ground level candidate points smaller than 30% of maximum of cluster would be consiedert as ground level
-            seek_for_steps: string:
-                if 'True' applay seek_steps_in_ground_level() and try to separate ground level higts
-                if 'False' take average of ground level
-                if 'both' calculate both and return tuple (average, seek_steps_in_ground_level())
-       Returns:
-            ground_level: list:
-                list of x,y,z, all points in cuted area of cluster wich are belonging to ground level
-        """
-        x_min =  region_data[0][:,0].min() # region_data came from matplotlib.path and ist is not array, hier konvert to squer array with nan if no value. still empty array 
-        y_min =  region_data[0][:,1].min()
-        x_dim = np.arange(region_data[0][:,0].min(),region_data[0][:,0].max()+1)
-        y_dim = np.arange(region_data[0][:,1].min(),region_data[0][:,1].max()+1)
-        full_dim_array = np.empty((len(x_dim),len(y_dim)))
-        full_dim_array[:] = np.NaN
-        for i in range(0,full_dim_array.shape[0]): # fill empty array with data
-            for j in range(0,full_dim_array.shape[1]):
-                xxx = np.where((region_data[0][:,0] == i+x_min) & (region_data[0][:,1] == j+y_min) )
-                if np.any(region_data[0][xxx[0]]):
-                    full_dim_array[i][j] = region_data[0][xxx[0]][0][2]
-        rda = rdarray(full_dim_array, no_data=-9999)  # calculate slope of the region
-        with Capturing() as output:
-            terr_data = TerrainAttribute(rda,
-                                   attrib='slope_riserun'
-                                  )
-        threshhold = np.nanmin(terr_data) + (np.nanmax(terr_data)-np.nanmin(terr_data))*slope_threshold_factor### x% of difference from max to min
-        flat_matrix = np.argwhere((terr_data<threshhold) & (terr_data.any()))
-
-        correct_flat_matrix = np.vstack((flat_matrix[:,0]+x_min, flat_matrix[:,1]+y_min)).T ### correct for the rigth coordinates due to the comleet picture
-        xyz_flat_matrix = []
-        #start_time = time.time()
-        for i in region_data[0]:
-            for k in correct_flat_matrix:
-                if (k[0] == i[0]) & (k[1] == i[1]):
-                    xyz_flat_matrix.append([i[0],i[1],i[2]])
-        xyz_flat_matrix = np.asarray(xyz_flat_matrix)
-
-        y_max,x_max,z_max = region_data[1]
-        ground_level = np.array([])
-        while len(ground_level) <= 1:
-            ground_level = xyz_flat_matrix[np.where(xyz_flat_matrix[:,2]<(z_max-(z_max-xyz_flat_matrix[:,2].min())*groundlevel_cutoff))]
-            groundlevel_cutoff = groundlevel_cutoff - 0.01
-            if groundlevel_cutoff <= 0.90:
-                break
-        return ground_level
+   
     
-    def true_hight(self, region_data, 
-                         slope_threshold_factor = 0.01, 
-                         groundlevel_cutoff = 0.30, 
-                         method='complete',
-                         metric='minkowski',
-                         threshold = 'default', 
-                         thold_default_factor = 1.1,
-                         cutoff_points =  5,
-                         seek_for_steps = 'False'):
-        """
-        Correct the heights in z for specific reagion_data (witch were cuted by cut_image_regions)
-        
-        Parameters:
-             slope_threshold_factor: float
-                 e.g. 0.01 means 1% of max-min sloap value would be consiedert as posible ground level points 
-                 default = 0.1 
-                 
-             groundlevel_cutoff: float 
-                 e.g. 0.3 means all values in ground level candidate points smaller than 30% of maximum of cluster would be consiedert as ground level
-                 default = 0.30 
-                 
-             method: str: 
-                method used by scipy.cluster.hierarchy.linkage
-                default = 'complete'
-                
-            metric: str:
-                metric used by scipy.cluster.hierarchy.linkage
-                default = 'minkowski'
-                
-            threshold: str or 
-                metric used by scipy.cluster.hierarchy.linkage
-                if default a squear root of (x_min - x_max)**2 + (y_min-y_max) times thold_default_factor
-                where x_ , y_ are coordinates
-                
-            thold_default_factor: float
-                scaling factor for threshold, this is arbitary and depends on quality and/or spacing  of data
-                default = 1.1
-                
-            cutoff_points: int 
-                number of points in a ground_level clusterd points, witch would be considered as artifacte e.g. 'jumping' stm tip/nois
-                default is 5. But you may set it iven to 0 (all points then includet)
-                
-            seek_for_steps: string 
-                if 'False' correction of z value only by avareging all point in ground level
-                if 'True' correction of z value only by avareging all point in nearst cluster of points in ground level
-                if 'both' correct both
-                defalut = 'False'
-        Returns:
-                list with 4 or 5 entries 
-                if seek_for_steps = 'False' 
-                    ['x','y','z', 'z-z_avarage(nearest_step)']
-                if seek_for_steps = 'True' 
-                    ['x','y','z', 'z-z_average(ground_level)']
-                if seek_for_steps = 'both'
-                    ['x','y','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']   
-        """
-        ground_level = self.find_groundlevel(region_data, 
-                         slope_threshold_factor = slope_threshold_factor, 
-                         groundlevel_cutoff = groundlevel_cutoff)
-        z_max = region_data[1][2]
-        if seek_for_steps == 'True':
-            true_hight = [z_max - self.seek_steps_in_ground_level(ground_level,
-                                                                  region_data[1],
-                                                                  method=method,
-                                                                  metric=metric,
-                                                                  threshold = threshold,
-                                                                  thold_default_factor = thold_default_factor,
-                                                                  cutoff_points = cutoff_points
-                                                                 )]
-        elif seek_for_steps == 'False':
-            true_hight = [z_max - np.average(ground_level[:,2])]
-        elif seek_for_steps == 'both':
-            true_hight = [z_max - np.average(ground_level[:,2]),
-                          z_max - self.seek_steps_in_ground_level(ground_level,
-                                                                  region_data[1],
-                                                                  method=method,
-                                                                  metric=metric,
-                                                                  threshold = threshold,
-                                                                  thold_default_factor = thold_default_factor,
-                                                                  cutoff_points = cutoff_points
-                                                                 )]
-            
-        return true_hight
     
-    def seek_steps_in_ground_level(self, ground_level,
-                                   peak_coordinats,
-                                   method='complete',
-                                   metric='minkowski',
-                                  threshold = 'default',
-                                  thold_default_factor = 1.1,
-                                  cutoff_points = 5):
-        """
-        Accumulate points of the ground level points (points without steep slope) 
-        in to clusters (see scipy.cluster.hierarchy)
-        
-        Parameters:
-            ground_level: numpy array: 
-                XYZ data . E.g ground_level[:,0] := 'X column'
-            method: str: 
-                method used by scipy.cluster.hierarchy.linkage
-                default is 'complete'
-            metric: str:
-                metric used by scipy.cluster.hierarchy.linkage
-                default is 'minkowski'
-            threshold: str or 
-                metric used by scipy.cluster.hierarchy.linkage
-                if default a squear root of (x_min - x_max)**2 + (y_min-y_max) times thold_default_factor
-                where x_ , y_ are coordinates 
-            thold_default_factor: float:
-                see thershold
-                default 1.1 so 110%
-            cutoff_points: int 
-                number of points in a ground_level clusterd points, witch would be considered as artifacte e.g. 'jumping' stm tip/nois
-                default is 5. But you may set it iven to 0 (all points then includet)
-                
-        """
-        factor = max(ground_level[:,0])/max(ground_level[:,2])  # normalization factor for Z for scipy.cluster.hierarchy.fcluster otherwise clustering of groundlevel points is not working in Z direction
-        ground_level[:,2] =ground_level[:,2]*factor  #normalize Z
-
-        Z = linkage(ground_level,
-                method=method,  # dissimilarity metric: max distance across all pairs of 
-                                        # records between two clusters
-                        metric=metric
-                )                           
-        if threshold != 'default':
-            t = threshold
-        else:
-            t = np.sqrt(abs(max(ground_level[:,0])-min(ground_level[:,0]))**2.+ 
-                    abs(max(ground_level[:,1])-min(ground_level[:,1]))**2.)*thold_default_factor  # default threshold   
-        clusters = fcluster(Z, t, criterion='distance',depth = 5) 
-        all_clusters_list = [ground_level[np.where(clusters==k)[0].tolist()] for k in np.unique(clusters)]
-
-        ground_level[:,2] =ground_level[:,2]/factor
-        for j in all_clusters_list:
-            j[:,2] = j[:,2]/factor
-        min_distance = None
-        n = cutoff_points # cut off criterium for quantity of points inside an clustered ground_level, e.g. artifactes of 'jumping' stm tip
-        counter = 0
-        
-#         subblot = plt.subplots(2, 2)
-#         ((ax1, ax2), (ax3, ax4)) = subblot[1]
-#         fig = subblot[0]
-#         ax4.scatter(ground_level[:,0],ground_level[:,1])
-        
-        for i in all_clusters_list:
-            if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
-                continue
-            mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
-            distance = np.sqrt(abs(mean_x - peak_coordinats[0])**2. + abs(mean_y-peak_coordinats[1])**2.)
-            if min_distance is None:  # finde smallest distance in xy to the cluster center
-                min_distance = (distance, counter)
-            if min_distance[0] > distance:
-                min_distance = (distance, counter)
-            counter +=1
-            
-#             ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
-#             ax4.scatter(peak_coordinats[0],peak_coordinats[1],  marker = 'x', label  ='center' )
-#             ax3.scatter(i[:,0],i[:,2])
-#             ax2.scatter(i[:,1],i[:,2],alpha=1)
-            
-        try:
-            avaraged_heigt_of_closest_groundlevel = np.average(
-                all_clusters_list[min_distance[1]][:,2])
-        except TypeError as err:
-            print ("TypeError: {0} \nProbably the value for cutoff_points is set too high. Try smaller one ore even 0".format(err))
-            raise
-        
-        
-        
-        return avaraged_heigt_of_closest_groundlevel
     
     def calc_true_height_4_every_region(self, 
                          slope_threshold_factor = 0.1, 
@@ -789,36 +570,47 @@ class clusterpic():
                 if seek_for_steps = 'both'
                     ['x','y','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']   
         """
-        hights = []
-        for i in self.coor_regieons:
-            result = self.true_hight(i, 
-                         slope_threshold_factor = slope_threshold_factor , 
-                         groundlevel_cutoff = groundlevel_cutoff, 
-                         method=method,
-                         metric=metric,
-                         threshold = threshold, 
-                         thold_default_factor = thold_default_factor,
-                         cutoff_points = cutoff_points,
-                         seek_for_steps = seek_for_steps)
-            result2 = [i[1][0], i[1][1], (i[1][0]/self.xres)*self.xreal, (i[1][1]/self.yres)*self.yreal, i[1][2]]
-            result2.extend(result)
-            hights.append(result2)
             
-            # print(hights)
-            #break
-        if seek_for_steps == 'True': 
-            columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_avarage(nearest_step)']
-        elif seek_for_steps == 'False':
-            columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)']  
-        elif seek_for_steps == 'both':               
-            columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']
-        print(hights)
-        self.heights = pd.DataFrame(hights, columns = columns)
-        # self.heights = np.array(hights)
-        # self.heights = [np.array(hights), columns]
+        for i in self.regions:
+            i.slope_threshold_factor = slope_threshold_factor 
+            i.groundlevel_cutoff = groundlevel_cutoff
+            i.method=method
+            i.metric=metric
+            i.threshold = threshold 
+            i.thold_default_factor = thold_default_factor
+            i.cutoff_points = cutoff_points
+            i.seek_for_steps = seek_for_steps
+            i.find_groundlevel()
+            i.calc_true_hight()
+            
+#            self.region.append(a_region)
+#             result = self.true_hight(i, 
+#                          slope_threshold_factor = slope_threshold_factor , 
+#                          groundlevel_cutoff = groundlevel_cutoff, 
+#                          method=method,
+#                          metric=metric,
+#                          threshold = threshold, 
+#                          thold_default_factor = thold_default_factor,
+#                          cutoff_points = cutoff_points,
+#                          seek_for_steps = seek_for_steps)
+#             result2 = [i[1][0], i[1][1], (i[1][0]/self.xres)*self.xreal, (i[1][1]/self.yres)*self.yreal, i[1][2]]
+#             result2.extend(result)
+#             hights.append(result2)
+            
+#             # print(hights)
+#             #break
+#         if seek_for_steps == 'True': 
+#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_avarage(nearest_step)']
+#         elif seek_for_steps == 'False':
+#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)']  
+#         elif seek_for_steps == 'both':               
+#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']
+#         print(hights)
+#         self.heights = pd.DataFrame(hights, columns = columns)
+#         # self.heights = np.array(hights)
+#         # self.heights = [np.array(hights), columns]
         
     def cluster_peaker(self,
-                       voronoi_pattern = True, 
                        cluster_numbers = True, 
                        markersize = 3,
                        figsize=(10,10), 
@@ -845,15 +637,18 @@ class clusterpic():
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
-        if voronoi_pattern:
-            voronoi_plot_2d(vor, ax = ax, show_points = False)
-        ax.imshow(self.data)
         if show_regions:
-            for i in self.coor_regieons:
-                x_min , x_max, y_min, y_max =min(i[0][:,0]), max(i[0][:,0]), min(i[0][:,1]), max(i[0][:,1])
-                rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=face_color,ec=rim_color, alpha = alpha)
-                ax.add_patch(rectangle)
-        #global pickable_artists
+            if self.regions:
+                for i in self.regions:
+                    if i.region_type == 'voronoi':
+                        voronoi_plot_2d(vor, ax = ax, show_points = False)
+                        break
+                    elif i.region_type == 'rectangular':
+                        x_min , x_max, y_min, y_max =min(i.coordinates[:,0]), max(i.coordinates[:,0]), min(i.coordinates[:,1]), max(i.coordinates[:,1])
+                        rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=face_color,ec=rim_color, alpha = alpha)
+                        ax.add_patch(rectangle)
+        ax.imshow(self.data)
+        
         pickable_artists = []
         for i in range(0,len(self.clusters_coord)):
             pt, = ax.plot(self.clusters_coord[:,0][i],self.clusters_coord[:,1][i], 'o', c = 'r', ms = markersize)  
