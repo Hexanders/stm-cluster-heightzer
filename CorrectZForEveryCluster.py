@@ -705,10 +705,11 @@ class clusterpic():
         n = cutoff_points # cut off criterium for quantity of points inside an clustered ground_level, e.g. artifactes of 'jumping' stm tip
         counter = 0
         
-        subblot = plt.subplots(2, 2)
-        ((ax1, ax2), (ax3, ax4)) = subblot[1]
-        fig = subblot[0]
-        ax4.scatter(ground_level[:,0],ground_level[:,1])
+#         subblot = plt.subplots(2, 2)
+#         ((ax1, ax2), (ax3, ax4)) = subblot[1]
+#         fig = subblot[0]
+#         ax4.scatter(ground_level[:,0],ground_level[:,1])
+        
         for i in all_clusters_list:
             if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
                 continue
@@ -720,10 +721,10 @@ class clusterpic():
                 min_distance = (distance, counter)
             counter +=1
             
-            ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
-            ax4.scatter(peak_coordinats[0],peak_coordinats[1],  marker = 'x', label  ='center' )
-            ax3.scatter(i[:,0],i[:,2])
-            ax2.scatter(i[:,1],i[:,2],alpha=1)
+#             ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
+#             ax4.scatter(peak_coordinats[0],peak_coordinats[1],  marker = 'x', label  ='center' )
+#             ax3.scatter(i[:,0],i[:,2])
+#             ax2.scatter(i[:,1],i[:,2],alpha=1)
             
         try:
             avaraged_heigt_of_closest_groundlevel = np.average(
@@ -804,7 +805,7 @@ class clusterpic():
             hights.append(result2)
             
             # print(hights)
-            break
+            #break
         if seek_for_steps == 'True': 
             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_avarage(nearest_step)']
         elif seek_for_steps == 'False':
