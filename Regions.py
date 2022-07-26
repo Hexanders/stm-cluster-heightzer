@@ -122,7 +122,7 @@ class region():
         ground_level = copy.deepcopy(self.ground_level)
         ground_level[:,2] =ground_level[:,2]*factor  #normalize Z
 
-        Z = linkage(self.ground_level,
+        Z = linkage(ground_level,
                 method=self.method,  # dissimilarity metric: max distance across all pairs of 
                                         # records between two clusters
                         metric=self.metric
