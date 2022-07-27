@@ -6,6 +6,8 @@ from io import StringIO
 import copy
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.cluster.hierarchy import fcluster
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 class Capturing(list):
     """
@@ -44,7 +46,7 @@ class region():
     thold_default_factor: float = 1.1
     cutoff_points: int =  5
     seek_for_steps: bool = False
-    
+
     def find_groundlevel(self):
         """
         Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
@@ -91,7 +93,7 @@ class region():
         self.ground_level = ground_level
         
     def calc_true_hight(self):
-            """
+        """
             Correct the heights in z for specific reagion_data (witch were cuted by cut_image_regions)
 
            
@@ -104,22 +106,23 @@ class region():
                     if seek_for_steps = 'both'
                         ['x','y','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']   
             """
-            z_max = self.cluster_peak_coordinates[2]
-            if self.seek_for_steps == True:
-                self.true_hight_closest_ground_level = self.seek_steps_in_ground_level()
-                self.true_hight = z_max - np.average(self.ground_level[:,2])
+        z_max = self.cluster_peak_coordinates[2]
+        if self.seek_for_steps:
+            self.true_hight_closest_ground_level = self.seek_steps_in_ground_level()
+            self.true_hight = z_max - np.average(self.ground_level[:,2])
                 
-            elif self.seek_for_steps == False:
-                self.true_hight = z_max - np.average(self.ground_level[:,2])
-     
+        elif self.seek_for_steps == False:
+            self.true_hight = z_max - np.average(self.ground_level[:,2])
+        return self
             
     def seek_steps_in_ground_level(self):
         """
         Accumulate points of the ground level points (points without steep slope) 
         in to clusters (see scipy.cluster.hierarchy)
         """
-        factor = max(self.ground_level[:,0])/max(self.ground_level[:,2])  # normalization factor for Z for scipy.cluster.hierarchy.fcluster otherwise clustering of groundlevel points is not working in Z direction
         ground_level = copy.deepcopy(self.ground_level)
+        factor = max(ground_level[:,0])/max(ground_level[:,2])  # normalization factor for Z for scipy.cluster.hierarchy.fcluster otherwise clustering of groundlevel points is not working in Z direction
+        
         ground_level[:,2] =ground_level[:,2]*factor  #normalize Z
 
         Z = linkage(ground_level,
@@ -141,10 +144,6 @@ class region():
         n = self.cutoff_points # cut off criterium for quantity of points inside an clustered ground_level, e.g. artifactes of 'jumping' stm tip
         counter = 0
         
-#         subblot = plt.subplots(2, 2)
-#         ((ax1, ax2), (ax3, ax4)) = subblot[1]
-#         fig = subblot[0]
-#         ax4.scatter(ground_level[:,0],ground_level[:,1])
         
         for i in self.ground_level_regions:
             if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
@@ -157,19 +156,73 @@ class region():
                 min_distance = (distance, counter)
             counter +=1
             
-#             ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
-#             ax4.scatter(peak_coordinats[0],peak_coordinats[1],  marker = 'x', label  ='center' )
-#             ax3.scatter(i[:,0],i[:,2])
-#             ax2.scatter(i[:,1],i[:,2],alpha=1)
             
         try:
             avaraged_heigt_of_closest_groundlevel = self.cluster_peak_coordinates[2] - np.average(
                 self.ground_level_regions[min_distance[1]][:,2])
         except TypeError as err:
-            avaraged_heigt_of_closest_groundlevel = None
-#             print ("TypeError: {0} \nProbably the value for cutoff_points is set too high. Try smaller one ore even 0".format(err))
-#             raise
-                
+            avaraged_heigt_of_closest_groundlevel = None                
         
         
         return avaraged_heigt_of_closest_groundlevel
+    
+    def plot_ground_level(self, 
+                          figsize = (10,8),
+                         saveimage =None,
+                         saveprefix ='',
+                         dpi=100):
+        """
+        Plots level ground of a region and there regions witch could be separatet as different level
+        """
+        subblot = plt.subplots(2, 2)
+        ((ax1, ax2), (ax3, ax4)) = subblot[1]
+        fig = subblot[0]
+        fig.set_size_inches(figsize)
+        X,Y,Z = self.ground_level[:,0],self.ground_level[:,1],self.ground_level[:,2]
+        
+        ax3.scatter(X,Z)
+        ax3.set_xlabel('x coordinate')
+        ax3.set_ylabel('Z coordinate')
+
+        ax2.scatter(Y,Z,
+                    alpha = 1,
+                    s=0.1)
+        ax2.set_xlabel('y coordinate')
+        ax2.set_ylabel('Z coordinate')
+
+        ax4.scatter(X,Y)
+        ax4.set_xlabel('x coordinate')
+        ax4.set_ylabel('y coordinate')
+        ax1.remove()
+        ax1 = fig.add_subplot(221,projection='3d')
+        X,Y,Z = self.coordinates[:,0],self.coordinates[:,1],self.coordinates[:,2]
+        ax1.plot_trisurf(X, Y, Z,  linewidth=0.1, cmap=cm.jet, alpha = 0.8)
+        ax1.set_xticklabels('')
+        ax1.set_yticklabels('')
+        ax1.set_zticklabels('')
+        ax1.dist = 6
+        Grcounter = -1
+        counter = 0
+        min_distance = None
+        for i in self.ground_level_regions:
+            if len(i[:,0]) <=self.cutoff_points: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
+                continue
+            Grcounter =+1
+            ax4.scatter(i[:,0],i[:,1],  s = 2 , label = 'Group:%s' %Grcounter)   
+            mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
+            distance = np.sqrt(abs(mean_x - self.cluster_peak_coordinates[0])**2. + abs(mean_y-self.cluster_peak_coordinates[1])**2.)
+            if min_distance is None:  # finde smallest distance in xy to the cluster center
+                min_distance = (distance, counter)
+            if min_distance[0] > distance:
+                min_distance = (distance, counter)
+            ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
+            ax4.scatter(self.cluster_peak_coordinates[0],self.cluster_peak_coordinates[1],  marker = 'x', label  ='center' )
+            ax3.scatter(i[:,0],i[:,2])
+            ax2.scatter(i[:,1],i[:,2],alpha=1)
+            counter +=1
+        ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        fig.suptitle(f'Region Nr: {self.region_id}')
+        plt.tight_layout()
+        if saveimage:
+            fig.savefig('%s_region%s.%s' %(saveprefix,self.region_id,'jpg'), dpi =dpi,bbox_inches='tight')
+            plt.close()

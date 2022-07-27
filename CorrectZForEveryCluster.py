@@ -9,7 +9,7 @@ from matplotlib import path ### just for "drawing" an polygon for later extracti
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
-
+import multiprocessing 
 
 import time
 
@@ -97,7 +97,7 @@ class clusterpic():
         self.cluster_distribution = None
         
     def __repr__(self):
-        return self.name
+        return f"Name: {self.name}"  
     
     def dump_calculated_heights(self, 
                            prefix = None, 
@@ -498,12 +498,12 @@ class clusterpic():
               #  [(dict_a3d_area[(i[0],i[1])] = i[2]) for i in a3d_area]
                 breakIt = False
                 cluster_max_inthearea = None
-                for i in self.clusters_coord:
+                for k in self.clusters_coord:
                     if breakIt:
                         break
-                    if (i[1],i[0]) in dict_a3d_area:
+                    if (k[1],k[0]) in dict_a3d_area:
                         # cluster_max_inthearea =(i[0],i[1],dict_a3d_area[(i[0],i[1])])
-                        cluster_max_inthearea =(i[0],i[1],i[2])
+                        cluster_max_inthearea =(k[1],k[0],k[2])
                         breakIt = True
                         break
                 a_region = region()
@@ -516,9 +516,34 @@ class clusterpic():
                 
    
     
-    
-    
+    def parralel_correct_height(self):
+        a_pool = multiprocessing.Pool()
+        result = a_pool.map(self.correct_heights_4_regions, self.regions)
+        return result
+
+    def correct_heights_4_regions(self, region,
+                         slope_threshold_factor = 0.1, 
+                         groundlevel_cutoff = 0.30, 
+                         method='complete',
+                         metric='minkowski',
+                         threshold = 'default', 
+                         thold_default_factor = 1.1,
+                         cutoff_points = 5,
+                         seek_for_steps = 'False'):
+        region.slope_threshold_factor = slope_threshold_factor 
+        region.groundlevel_cutoff = groundlevel_cutoff
+        region.method=method
+        region.metric=metric
+        region.threshold = threshold 
+        region.thold_default_factor = thold_default_factor
+        region.cutoff_points = cutoff_points
+        region.seek_for_steps = seek_for_steps
+        region.find_groundlevel()
+        region.calc_true_hight()
+        return region
+
     def calc_true_height_4_every_region(self, 
+                         break_index = None,
                          slope_threshold_factor = 0.1, 
                          groundlevel_cutoff = 0.30, 
                          method='complete',
@@ -570,8 +595,8 @@ class clusterpic():
                 if seek_for_steps = 'both'
                     ['x','y','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']   
         """
-            
-        for i in self.regions:
+        
+        for idx,i in enumerate(self.regions):
             i.slope_threshold_factor = slope_threshold_factor 
             i.groundlevel_cutoff = groundlevel_cutoff
             i.method=method
@@ -582,33 +607,10 @@ class clusterpic():
             i.seek_for_steps = seek_for_steps
             i.find_groundlevel()
             i.calc_true_hight()
+            if break_index:
+                if idx == break_index:
+                    break
             
-#            self.region.append(a_region)
-#             result = self.true_hight(i, 
-#                          slope_threshold_factor = slope_threshold_factor , 
-#                          groundlevel_cutoff = groundlevel_cutoff, 
-#                          method=method,
-#                          metric=metric,
-#                          threshold = threshold, 
-#                          thold_default_factor = thold_default_factor,
-#                          cutoff_points = cutoff_points,
-#                          seek_for_steps = seek_for_steps)
-#             result2 = [i[1][0], i[1][1], (i[1][0]/self.xres)*self.xreal, (i[1][1]/self.yres)*self.yreal, i[1][2]]
-#             result2.extend(result)
-#             hights.append(result2)
-            
-#             # print(hights)
-#             #break
-#         if seek_for_steps == 'True': 
-#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_avarage(nearest_step)']
-#         elif seek_for_steps == 'False':
-#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)']  
-#         elif seek_for_steps == 'both':               
-#             columns = ['x[pix]','y[pix]','x[m]','y[m]','z', 'z-z_average(ground_level)', 'z-z_avarage(nearest_step)']
-#         print(hights)
-#         self.heights = pd.DataFrame(hights, columns = columns)
-#         # self.heights = np.array(hights)
-#         # self.heights = [np.array(hights), columns]
         
     def cluster_peaker(self,
                        cluster_numbers = True, 
