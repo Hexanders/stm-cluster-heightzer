@@ -648,7 +648,7 @@ class clusterpic():
                     if i.region_type == 'voronoi':
                         voronoi_plot_2d(vor, ax = ax, show_points = False)
                         break
-                    elif i.region_type == 'rectangular':
+                    elif 'rectangular' in i.region_type:
                         x_min , x_max, y_min, y_max =min(i.coordinates[:,0]), max(i.coordinates[:,0]), min(i.coordinates[:,1]), max(i.coordinates[:,1])
                         rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=face_color,ec=rim_color, alpha = alpha)
                         ax.add_patch(rectangle)
