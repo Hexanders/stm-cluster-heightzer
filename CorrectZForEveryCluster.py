@@ -93,9 +93,21 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
+        self.hi = []
         self.heights = pd.DataFrame(columns = ['x','y','initial_Z', 'corrected_Z_averaged', 'corrected_Z_closest_step'])
         self.cluster_distribution = None
         
+        if (self.data.shape[0] == self.data.shape[1]) == False:
+            #### correct cuted images to full dimetions, so it is simple to compute all other stuff
+            xmeter_per_pix = self.xreal/self.xres
+            ymeter_per_pix = self.yreal/self.yres
+            dataFr = pd.DataFrame(self.data)
+            self.data = dataFr.reindex(index=list(dataFr.columns)).to_numpy()
+            self.yres = self.data.shape[0]
+            self.xres = self.data.shape[1]
+            self.yreal = ymeter_per_pix*self.data.shape[0]
+            self.xreal = xmeter_per_pix*self.data.shape[1]
+            
     def __repr__(self):
         return f"Name: {self.name}"  
     
@@ -166,7 +178,7 @@ class clusterpic():
         pixelRange: integer, how big is the wind in wich to search. E.g pixelRange=4 produces 8X8 window (array with the shape = (8,8))
         """
         no_new_max_found = True
-        suspect = xyz_current_max
+        suspect = xyz_current_max#[1],xyz_current_max[0], xyz_current_max[2]
         step_counter = 0
         while no_new_max_found:
             step_counter +=1
@@ -179,11 +191,15 @@ class clusterpic():
             aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
             maxX, maxY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
             maxXX, maxYY = maxX+x_range[0], maxY+y_range[0] ## correct for the actual array, so not the slice
+            if np.isnan(suspect[2]): ### some times it is just nan, no idea why. This is not very good fix but it works
+                suspect[2] = 0.0
             if aslice.max() > suspect[2]:
                 suspect = [maxYY, maxXX, aslice.max() ]
                 #no_new_max_found = False
             else:
                 no_new_max_found = False
+        self.hi.append([[maxX,maxY],[x_range[0],y_range[0]],step_counter])
+        self.hi.append([aslice.max() , suspect])
         return suspect,y_range,x_range, aslice, step_counter
     
     def find_peaks_in_rows(self, 
