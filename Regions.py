@@ -91,6 +91,7 @@ class region():
             if groundlevel_cutoff <= 0.90:
                 break
         self.ground_level = ground_level
+        return self
         
     def calc_true_hight(self):
         """

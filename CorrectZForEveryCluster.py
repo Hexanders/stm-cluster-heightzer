@@ -444,8 +444,12 @@ class clusterpic():
             numpy.array:
                 distace of every pare of all clusters
         """
-        all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
-                              self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
+        # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
+        #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
+                                               
+        all_coord = np.array((self.heights[f'x_{self.si_unit_xy.unitstr}'],
+                              self.heights[f'y_{self.si_unit_xy.unitstr}'])).T # prepare 2d array vor surching distance
+
         distribution = []
         for i in range(0, len(all_coord)):
             for k in range(0, len(all_coord)):
@@ -538,13 +542,8 @@ class clusterpic():
                 
    
     
-    def parralel_correct_height(self):
-        a_pool = multiprocessing.Pool()
-        result = a_pool.map(self.correct_heights_4_regions, self.regions)
-        return result
-
-    def correct_heights_4_regions(self, region,
-                         slope_threshold_factor = 0.1, 
+    def parralel_correct_height(self, 
+                        slope_threshold_factor = 0.1, 
                          groundlevel_cutoff = 0.30, 
                          method='complete',
                          metric='minkowski',
@@ -552,17 +551,31 @@ class clusterpic():
                          thold_default_factor = 1.1,
                          cutoff_points = 5,
                          seek_for_steps = 'False'):
-        region.slope_threshold_factor = slope_threshold_factor 
-        region.groundlevel_cutoff = groundlevel_cutoff
-        region.method=method
-        region.metric=metric
-        region.threshold = threshold 
-        region.thold_default_factor = thold_default_factor
-        region.cutoff_points = cutoff_points
-        region.seek_for_steps = seek_for_steps
-        region.find_groundlevel()
-        region.calc_true_hight()
-        return region
+        """
+        Calculates the hights in parralel
+        """
+        for region in self.regions: #set some variales
+            region.slope_threshold_factor = slope_threshold_factor 
+            region.groundlevel_cutoff = groundlevel_cutoff
+            region.method=method
+            region.metric=metric
+            region.threshold = threshold 
+            region.thold_default_factor = thold_default_factor
+            region.cutoff_points = cutoff_points
+            region.seek_for_steps = seek_for_steps
+        a_pool = multiprocessing.Pool()
+        self.regions = a_pool.map(self.correct_heights_4_regions,
+                                  self.regions)
+        for idx,i in enumerate(self.regions):# collecting corrected hights
+            self.update_height(i, idx)
+
+    def correct_heights_4_regions(self, i):
+        """
+        just needed fo parralel_correct_height()
+        """
+        i.find_groundlevel()
+        i.calc_true_hight()
+        return i
 
     def calc_true_height_4_every_region(self, 
                          break_index = None,
@@ -630,6 +643,7 @@ class clusterpic():
             i.find_groundlevel()
             i.calc_true_hight()
             self.update_height(i,idx)
+            print(idx)
             if break_index:
                 if idx == break_index:
                     break
@@ -724,7 +738,7 @@ class clusterpic():
     def update_height(self, region, index):
         y,x,z = region.cluster_peak_coordinates
         x_m = x*self.xreal/self.xres
-        y_m = x*self.yreal/self.yres
+        y_m = y*self.yreal/self.yres
         true_height = region.true_hight
         true_height_closest= region.true_hight_closest_ground_level
         # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
