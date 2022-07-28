@@ -93,7 +93,13 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
-        self.heights = pd.DataFrame(columns = ['x','y','initial_Z', 'corrected_Z_averaged', 'corrected_Z_closest_step'])
+        self.heights = pd.DataFrame(columns = ['x',
+                                               'y',
+                                               f'x_{self.si_unit_xy.unitstr}',
+                                               f'y_{self.si_unit_xy.unitstr}',
+                                               'initial_Z', 
+                                               'corrected_Z_averaged', 
+                                               'corrected_Z_closest_step'])
         self.cluster_distribution = None
         
         if (self.data.shape[0] == self.data.shape[1]) == False:
@@ -438,7 +444,8 @@ class clusterpic():
             numpy.array:
                 distace of every pare of all clusters
         """
-        all_coord = np.array((self.heights['x[m]'],self.heights['y[m]'])).T # prepare 2d array vor surching distance
+        all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
+                              self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
         distribution = []
         for i in range(0, len(all_coord)):
             for k in range(0, len(all_coord)):
@@ -716,10 +723,12 @@ class clusterpic():
     
     def update_height(self, region, index):
         y,x,z = region.cluster_peak_coordinates
+        x_m = x*self.xreal/self.xres
+        y_m = x*self.yreal/self.yres
         true_height = region.true_hight
         true_height_closest= region.true_hight_closest_ground_level
         # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
-        self.heights.loc[index] = [x,y,z, true_height, true_height_closest]
+        self.heights.loc[index] = [x,y,x_m,y_m,z, true_height, true_height_closest]
     def show_regions(self, 
                      figsize =(10,10), 
                      alpha = 0.65,
