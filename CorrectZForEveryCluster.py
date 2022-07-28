@@ -93,7 +93,7 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
-        self.heights = pd.DataFrame()
+        self.heights = pd.DataFrame(columns = ['x','y','initial_Z', 'corrected_Z_averaged', 'corrected_Z_closest_step'])
         self.cluster_distribution = None
         
     def __repr__(self):
@@ -445,7 +445,8 @@ class clusterpic():
         """
         
         if window is not None:
-            region_type = 'rectangular'
+            region_type = f'rectangular {window} pix'
+            self.heights.index.name = region_type
             self.regions = []
             for idx,i in enumerate(self.clusters_coord): # sclice data in to reagion bei squers
                 y_range = [int(i[1]-window), int(i[1]+window)]
@@ -478,6 +479,7 @@ class clusterpic():
         else:
             self.regions = []
             region_type = 'voronoi'
+            self.heights.index.name = region_type
             vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
             regions, vertices = self.voronoi_finite_polygons_2d(vor)### conver regions in to finit regeons
             coor_regieons = []
@@ -607,6 +609,7 @@ class clusterpic():
             i.seek_for_steps = seek_for_steps
             i.find_groundlevel()
             i.calc_true_hight()
+            self.update_height(i,idx)
             if break_index:
                 if idx == break_index:
                     break
@@ -698,6 +701,12 @@ class clusterpic():
         ax.xaxis.tick_top()                     # and move the X-Axis
         return ax, pickable_artists
     
+    def update_height(self, region, index):
+        y,x,z = region.cluster_peak_coordinates
+        true_height = region.true_hight
+        true_height_closest= region.true_hight_closest_ground_level
+        # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
+        self.heights.loc[index] = [x,y,z, true_height, true_height_closest]
     def show_regions(self, 
                      figsize =(10,10), 
                      alpha = 0.65,
