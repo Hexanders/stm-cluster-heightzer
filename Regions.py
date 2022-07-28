@@ -168,6 +168,8 @@ class region():
     
     def plot_ground_level(self, 
                           figsize = (10,8),
+                         axis_view = None,
+                         show_all_ground_level_points = True,
                          saveimage =None,
                          saveprefix ='',
                          dpi=100):
@@ -189,37 +191,48 @@ class region():
                     s=0.1)
         ax2.set_xlabel('y coordinate')
         ax2.set_ylabel('Z coordinate')
-
-        ax4.scatter(X,Y)
+        if show_all_ground_level_points:
+            ax4.scatter(X,Y)
         ax4.set_xlabel('x coordinate')
         ax4.set_ylabel('y coordinate')
         ax1.remove()
         ax1 = fig.add_subplot(221,projection='3d')
+        if axis_view:
+            ax1.view_init(axis_view[0],axis_view[1])
         X,Y,Z = self.coordinates[:,0],self.coordinates[:,1],self.coordinates[:,2]
         ax1.plot_trisurf(X, Y, Z,  linewidth=0.1, cmap=cm.jet, alpha = 0.8)
-        ax1.set_xticklabels('')
-        ax1.set_yticklabels('')
+        #ax1.set_xticklabels('')
+        #ax1.set_yticklabels('')
         ax1.set_zticklabels('')
-        ax1.dist = 6
-        Grcounter = -1
+        ax1.dist = 8
         counter = 0
         min_distance = None
-        for i in self.ground_level_regions:
+        for Grcounter,i in enumerate(self.ground_level_regions):
             if len(i[:,0]) <=self.cutoff_points: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
                 continue
-            Grcounter =+1
-            ax4.scatter(i[:,0],i[:,1],  s = 2 , label = 'Group:%s' %Grcounter)   
+            sc = ax4.scatter(i[:,0],i[:,1],  s = 2 , label = 'Group:%s' %Grcounter)
+            colors = sc.get_facecolor()
             mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
             distance = np.sqrt(abs(mean_x - self.cluster_peak_coordinates[0])**2. + abs(mean_y-self.cluster_peak_coordinates[1])**2.)
             if min_distance is None:  # finde smallest distance in xy to the cluster center
                 min_distance = (distance, counter)
             if min_distance[0] > distance:
                 min_distance = (distance, counter)
-            ax4.scatter(mean_x, mean_y, s=80, label = 'd:%s'%round(distance,2))
-            ax4.scatter(self.cluster_peak_coordinates[0],self.cluster_peak_coordinates[1],  marker = 'x', label  ='center' )
-            ax3.scatter(i[:,0],i[:,2])
-            ax2.scatter(i[:,1],i[:,2],alpha=1)
+            ax4.scatter(mean_x, mean_y, 
+                        s=80,
+                        color = colors,
+                        label = 'd:%s'%round(distance,2))
+            ax3.scatter(i[:,0],i[:,2],
+                        color = colors,
+                       )
+            ax2.scatter(i[:,1],i[:,2],
+                        color = colors,
+                        alpha=1)
             counter +=1
+        ax4.scatter(self.cluster_peak_coordinates[0],
+                        self.cluster_peak_coordinates[1],  
+                        marker = 'x', 
+                        label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         fig.suptitle(f'Region Nr: {self.region_id}')
         plt.tight_layout()
