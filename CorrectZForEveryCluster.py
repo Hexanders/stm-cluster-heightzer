@@ -93,7 +93,6 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
-        self.hi = []
         self.heights = pd.DataFrame(columns = ['x','y','initial_Z', 'corrected_Z_averaged', 'corrected_Z_closest_step'])
         self.cluster_distribution = None
         
@@ -198,8 +197,6 @@ class clusterpic():
                 #no_new_max_found = False
             else:
                 no_new_max_found = False
-        self.hi.append([[maxX,maxY],[x_range[0],y_range[0]],step_counter])
-        self.hi.append([aslice.max() , suspect])
         return suspect,y_range,x_range, aslice, step_counter
     
     def find_peaks_in_rows(self, 
