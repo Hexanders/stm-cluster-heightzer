@@ -90,6 +90,8 @@ An finaly you get an PandasDataFrame with all cluster coordinates, heights and c
 my_pic.heights
 ```
 ![](example/pictures/heights.png)
+
+
 By using plot_heights_distribution() you can see some statistics:
 ```
 my_pic.plot_heights_distribution()
