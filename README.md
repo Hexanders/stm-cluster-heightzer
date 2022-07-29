@@ -80,3 +80,12 @@ my_pic.parralel_correct_height(seek_for_steps='both',
                                     slope_threshold_factor=0.1,
                                      thold_default_factor=0.9)
 ```
+Similar computaion can be done on one cor by using:
+
+```
+my_pic.calc_true_height_4_every_region()
+```
+An finaly you get an PandasDataFrame with all cluster coordinates, heights and corrected heights
+```
+my_pic.heights
+```
