@@ -10,6 +10,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import multiprocessing 
+from sklearn.neighbors import KernelDensity
 
 import time
 
@@ -93,6 +94,7 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
+        # self.tmp = [] # for debuging
         self.heights = pd.DataFrame(columns = ['x',
                                                'y',
                                                f'x_{self.si_unit_xy.unitstr}',
@@ -196,13 +198,16 @@ class clusterpic():
             aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
             maxX, maxY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
             maxXX, maxYY = maxX+x_range[0], maxY+y_range[0] ## correct for the actual array, so not the slice
+            #self.tmp.append([aslice.max() ,suspect])
             if np.isnan(suspect[2]): ### some times it is just nan, no idea why. This is not very good fix but it works
                 suspect[2] = 0.0
             if aslice.max() > suspect[2]:
                 suspect = [maxYY, maxXX, aslice.max() ]
+                
                 #no_new_max_found = False
             else:
                 no_new_max_found = False
+
         return suspect,y_range,x_range, aslice, step_counter
     
     def find_peaks_in_rows(self, 
@@ -733,6 +738,7 @@ class clusterpic():
         ax.set_title('Total clusters: '+str(len(self.clusters_coord)))
         ax.set_ylim(ax.get_ylim()[::-1])        # invert the axis
         ax.xaxis.tick_top()                     # and move the X-Axis
+        fig.set_facecolor('white')
         return ax, pickable_artists
     
     def update_height(self, region, index):
@@ -771,4 +777,70 @@ class clusterpic():
             fig.add_patch(rectangle)
             # break
         
-     
+    def plot_heights_distribution(self,
+                        bins = 10, 
+                        bandwidth = 0.3E-9, 
+                        figsize = (8,8), 
+                        axfontsize = 10,
+                        subtitle = False, 
+                        sub_fontsize = 12,
+                                 return_bining = False):
+        """
+        Represents the results of calculation of true higts of all clusters in Picture
+        Returns 
+            bins: data from matplotlib.hist()
+            X_plot[:, 0] : x values from kernalDensity calculation
+            np.exp(log_dens) : y values from kernalDensity calculation
+        """
+        if not self.heights.values.any():
+            return 'Heights values are not calculated yet.'
+        fig, ax = plt.subplots(2, 2, figsize = figsize)
+        bining= ax[0,0].hist(self.heights['corrected_Z_averaged'], bins=bins,
+                        density=False)
+        ax[0, 0].set_title('Heights with bins #= ' +str(bins), fontdict = {'fontsize': axfontsize})
+        
+
+        #deviation = [i[0][2]-i[1] for i in hights]
+        deviation = self.heights['initial_Z'] - self.heights['corrected_Z_averaged']
+        deviation2 = self.heights['initial_Z'] - self.heights['corrected_Z_closest_step']
+
+        ax[0,1].scatter(self.heights['initial_Z'],deviation, label = 'average')
+        ax[0,1].scatter(self.heights['initial_Z'],deviation2, label = 'closest step')
+        ax[1,1].scatter(self.heights['initial_Z'],self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_closest_step'], label = 'closest step')
+        
+        #plt.show()
+
+#         ax[1,1].scatter(heights[:,2],heights[:,3])
+#         ax[1,1].set_title('x:Measered  y:corrected', fontdict = {'fontsize': axfontsize})
+
+#         #plt.figure()
+        KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
+        X_plot = KernalPlot[:, np.newaxis]
+        kde = KernelDensity(#kernel="epanechnikov",
+                            kernel="gaussian",
+                             bandwidth=bandwidth ).fit(X_plot)
+        log_dens = kde.score_samples(X_plot)
+        ax[1,0].scatter(X_plot[:, 0], np.exp(log_dens))
+#         #ax[1,0].set_xlim(0.0,4.0E-09)
+        ax[1,0].set_title('Heights Distribution with KernelDensity\n with bandwidth =  '+str(bandwidth),fontdict = {'fontsize': axfontsize})
+#         ax[0,1].grid()
+#         ax[1,0].grid()
+        if subtitle:
+            fig.suptitle(subtitle, fontsize=sub_fontsize)
+        count_ax = 0
+        for axs in ax.flat:
+            if count_ax == 0:
+                axs.set(xlabel='Binned hights', ylabel='Cluster per Bin')
+            if count_ax == 1:
+                axs.set(xlabel='Initial Z [m]', ylabel='Initial Z - Corrected Z')                
+            if count_ax == 2:
+                axs.set(xlabel='Z [m]', ylabel='Density distribution')  
+            if count_ax == 3:
+                axs.set(xlabel='Z [m]', ylabel='Z_average - Z_closest_step')                  
+            count_ax += 1
+        # ax[0,1].set_title('Diviation x:measured y: differnce to corrected', fontdict = {'fontsize': axfontsize})
+        fig.tight_layout()
+        ax[0,1].legend()
+        plt.show()
+        if return_bining:
+            return (bining, X_plot, log_dens)

@@ -171,6 +171,7 @@ class region():
                           figsize = (10,8),
                          axis_view = None,
                          show_all_ground_level_points = True,
+                        round_digis = 3,
                          saveimage =None,
                          saveprefix ='',
                          dpi=100):
@@ -235,7 +236,11 @@ class region():
                         marker = 'x', 
                         label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.suptitle(f'Region Nr: {self.region_id}')
+        fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h:%s, h_step: %s' %
+                                                                ('{:0.3e}'.format(self.cluster_peak_coordinates[2]), 
+                                                                 '{:0.3e}'.format(self.true_hight),
+                                                                '{:0.3e}'.format(self.true_hight_closest_ground_level)
+                                                                ))
         plt.tight_layout()
         if saveimage:
             fig.savefig('%s_region%s.%s' %(saveprefix,self.region_id,'jpg'), dpi =dpi,bbox_inches='tight')
