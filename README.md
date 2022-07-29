@@ -47,7 +47,7 @@ to group thos points to separated cluster
 At this stage you can manual add or delet cluster by clickin on it with the mouse. The cluster_peaker will choos the highest point in the near of your click point
 
 ```
-ax, picable_artists = hot2.cluster_peaker()
+ax, picable_artists = my_pic.cluster_peaker()
 ```
 ![](example/pictures/cluster_peaker.png)
 
@@ -56,3 +56,10 @@ If you add or deletet some clusters do not forget to update by
 ```
 my_pic.update_peaked_clusters(picable_artists)
 ```
+Now you can either cut image with <a href="https://en.wikipedia.org/wiki/Voronoi_diagram"> voronoi algorithm</a> 
+
+``` 
+my_pic.cut_image_regions()
+ax, picable_artists = my_pic.cluster_peaker(show_regions= True)
+```
+
