@@ -42,7 +42,7 @@ Now use
 ```
 my_pic.group_clusters()
 ```
-to group thos points to separated cluster
+to group thos points to separated clusters
 
 At this stage you can manual add or delet cluster by clickin on it with the mouse. The cluster_peaker will choos the highest point in the near of your click point
 
