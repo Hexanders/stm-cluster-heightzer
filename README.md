@@ -89,3 +89,4 @@ An finaly you get an PandasDataFrame with all cluster coordinates, heights and c
 ```
 my_pic.heights
 ```
+![](example/pictures/heights.png)
