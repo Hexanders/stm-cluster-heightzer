@@ -27,10 +27,25 @@ You can show the data by :
 ```
 my_pic.show_data()
 ```
-![](exaple/pictures/stm-data.png)
+
+![](example/pictures/stm-data.png)
+
 Now you need to find the peaks in peacture
 
 ```
 my_pic.find_peaks_in_rows()
 ```
-![](exaple/pictures/finde-peaks_in_rows.png)
+
+![](example/pictures/finde-peaks_in_rows.png)
+
+Now use 
+```
+my_pic.group_clusters()
+```
+to group thos points to separated cluster
+
+At this stage you can manual add or delet cluster by clickin on it with the mouse
+
+```
+ax, picable_artists = hot2.cluster_peaker()
+```
