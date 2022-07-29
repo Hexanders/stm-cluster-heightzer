@@ -62,4 +62,12 @@ Now you can either cut image with <a href="https://en.wikipedia.org/wiki/Voronoi
 my_pic.cut_image_regions()
 ax, picable_artists = my_pic.cluster_peaker(show_regions= True)
 ```
+![](example/pictures/voronoi.png)
 
+Or define some window with pixels as a side of rectangular frame
+
+```
+my_pic.cut_image_regions(window=30)
+ax, picable_artists = my_pic.cluster_peaker(show_regions= True, alpha = 0.4)
+```
+![](example/pictures/windows.png)
