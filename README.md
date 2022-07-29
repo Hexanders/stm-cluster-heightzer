@@ -72,7 +72,7 @@ ax, picable_artists = my_pic.cluster_peaker(show_regions= True, alpha = 0.4)
 ```
 ![](example/pictures/windows.png)
 
-After that the correction of the heights of every cluster can beginn parralel_correct_height() method compute and correct the hights by calculating the slopes in evry point (see https://richdem.readthedocs.io/en/latest/) and decide that what is ground level and what is peak. Hier only this short explanaition the rest can be understud by reading the docstrings or asking me directly.
+After that the correction of the heights of every cluster can beginn parralel_correct_height() method compute and correct the hights by calculating the slopes in evry point (see https://richdem.readthedocs.io/en/latest/) and decides than what is ground level and what is peak. Hier only this short explanaition the rest can be understud by reading the docstrings or asking me directly.
 
 ```
 my_pic.parralel_correct_height(seek_for_steps='both',
