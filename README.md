@@ -27,3 +27,10 @@ You can show the data by :
 ```
 my_pic.show_data()
 ```
+![](exaple/pictures/stm-data.png)
+Now you need to find the peaks in peacture
+
+```
+my_pic.find_peaks_in_rows()
+```
+![](exaple/pictures/finde-peaks_in_rows.png)
