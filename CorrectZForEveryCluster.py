@@ -12,8 +12,8 @@ from matplotlib import cm
 import multiprocessing 
 from sklearn.neighbors import KernelDensity
 import time
-
-
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
         
 def load_from_gwyddion(path):
     """
@@ -788,12 +788,6 @@ class clusterpic():
         ax[0,1].scatter(self.heights['initial_Z'],deviation2, label = 'closest step')
         ax[1,1].scatter(self.heights['initial_Z'],self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_closest_step'], label = 'closest step')
         
-        #plt.show()
-
-#         ax[1,1].scatter(heights[:,2],heights[:,3])
-#         ax[1,1].set_title('x:Measered  y:corrected', fontdict = {'fontsize': axfontsize})
-
-#         #plt.figure()
         KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
         X_plot = KernalPlot[:, np.newaxis]
         kde = KernelDensity(#kernel="epanechnikov",
@@ -801,16 +795,13 @@ class clusterpic():
                              bandwidth=bandwidth ).fit(X_plot)
         log_dens = kde.score_samples(X_plot)
         ax[1,0].scatter(X_plot[:, 0], np.exp(log_dens))
-#         #ax[1,0].set_xlim(0.0,4.0E-09)
         ax[1,0].set_title('Heights Distribution with KernelDensity\n with bandwidth =  '+str(bandwidth),fontdict = {'fontsize': axfontsize})
-#         ax[0,1].grid()
-#         ax[1,0].grid()
         if subtitle:
             fig.suptitle(subtitle, fontsize=sub_fontsize)
         count_ax = 0
         for axs in ax.flat:
             if count_ax == 0:
-                axs.set(xlabel='Binned hights', ylabel='Cluster per Bin')
+                axs.set(xlabel='Binned heights', ylabel='Cluster per Bin')
             if count_ax == 1:
                 axs.set(xlabel='Initial Z [m]', ylabel='Initial Z - Corrected Z')                
             if count_ax == 2:
@@ -818,9 +809,162 @@ class clusterpic():
             if count_ax == 3:
                 axs.set(xlabel='Z [m]', ylabel='Z_average - Z_closest_step')                  
             count_ax += 1
-        # ax[0,1].set_title('Diviation x:measured y: differnce to corrected', fontdict = {'fontsize': axfontsize})
         fig.tight_layout()
         ax[0,1].legend()
-        plt.show()
+       
         if return_bining:
             return (bining, X_plot, log_dens)
+        
+    def plot_heights_distribution_interactice(self,
+                                              bins = 10, 
+                        bandwidth = 0.3E-9, 
+                        figsize = (8,8), 
+                        axfontsize = 10,
+                        subtitle = False, 
+                        sub_fontsize = 12,
+                                 return_bining = False):
+        fig = make_subplots(rows=2, cols=2,
+                            horizontal_spacing = 0.15,
+                            vertical_spacing = 0.15,
+                            subplot_titles = (f"Heights with bins #={bins}",
+                                             "",
+                                            
+                                              f"Kernel Density\n with bandwidth {bandwidth}",
+                                             ""
+                                            ))
+
+        fig.update_layout(
+        autosize=False,
+        width=figsize[0]*100,
+        height=figsize[1]*100,
+        # margin=dict(l=80, r=80, t=100, b=80)
+        )
+
+        # fig.add_trace(go.Histogram(x=self.heights['corrected_Z_averaged'],xbin.size=bins),
+        #               row=1, col=2)
+        
+        binning = plt.hist(self.heights['corrected_Z_averaged'], bins=bins,
+                        density=False)
+        binning2 = plt.hist(self.heights['corrected_Z_closest_step'], bins=bins,
+                        density=False)
+          
+        # bining_name = ['corrected_Z_averaged']*len(binning[0])
+        # binning = [binning[0],binning[1]]
+        # binning.append(bining_name)
+        # bining2_name = ['Distribution closest step']*len(binning2[0])
+        # binning2 = [binning2[0],binning2[1]]
+        # binning2.append(bining2_name)
+        # bined_data = pd.DataFrame(binning, columns = ['binns', 'clsuter_per_bin', 'name'])
+        
+        # fig.add_trace(go.Bar(bined_data, x),
+        #               row=1, col=1)
+
+#         fig.add_trace(go.Bar(y = binning[0],x=binning[1], name ='Distribution averaged'),
+#                       row=1, col=1)
+        
+#         fig.add_trace(go.Bar(y = binning2[0],x=binning2[1], name ='Distribution closest step'),
+#                       row=1, col=1)
+        bar_data = [
+                go.Bar(y = binning[0],x=binning[1], name ='Distribution averaged', offsetgroup=1),
+            go.Bar(y = binning2[0],x=binning2[1], name ='Distribution closest step', offsetgroup=1)
+        ]
+        fig.add_traces(bar_data, rows=1, cols=1)
+        fig.update_layout(barmode='group', xaxis_tickangle=-45)
+        KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
+        X_plot = KernalPlot[:, np.newaxis]
+        kde = KernelDensity(#kernel="epanechnikov",
+                            kernel="gaussian",
+                             bandwidth=bandwidth ).fit(X_plot)
+        log_dens = kde.score_samples(X_plot)
+        
+        KernalPlot2 = self.heights['corrected_Z_closest_step'].to_numpy()
+        X_plot2= KernalPlot2[:, np.newaxis]
+        kde2 = KernelDensity(#kernel="epanechnikov",
+                            kernel="gaussian",
+                             bandwidth=bandwidth ).fit(X_plot2)
+        log_dens2 = kde.score_samples(X_plot2)
+        
+        deviation = self.heights['initial_Z'] - self.heights['corrected_Z_averaged']
+        deviation2 = self.heights['initial_Z'] - self.heights['corrected_Z_closest_step']
+        
+        fig.add_trace(go.Scattergl(x=X_plot[:, 0], y=np.exp(log_dens), mode='markers', name ='Kernel Density averaged'),
+                      row=2, col=1)
+        fig.add_trace(go.Scattergl(x=X_plot2[:, 0], y=np.exp(log_dens2), mode='markers', name ='Kernel Density closest step'),
+                      row=2, col=1)
+
+        
+        fig.add_trace(go.Scattergl( x = self.heights['initial_Z'], 
+                                   y = deviation, 
+                                   text = self.heights.index.values,
+                                   hoverinfo = 'text', 
+                                   name = 'average', 
+                                   mode = 'markers'),
+                      row=1, col=2)
+        
+        fig.add_trace(go.Scattergl( x = self.heights['initial_Z'], 
+                                   y= deviation2, 
+                                   text = self.heights.index.values,
+                                   hoverinfo = 'text', 
+                                   name = 'closest step', 
+                                   mode = 'markers'),
+                      row=1, col=2)
+        
+        fig.add_trace(go.Scattergl(x = self.heights['initial_Z'], 
+                                   y = self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_closest_step'], 
+                                    text = self.heights.index.values,
+                                   hoverinfo = 'text', 
+                                   name = 'average - closest step', mode = 'markers'),
+                      row=2, col=2)
+        fig['layout']['xaxis']['title']='Binned heights'
+        fig['layout']['yaxis']['title']='Cluster per bin'
+        fig['layout']['xaxis2']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['yaxis2']['title']='Initial_Z - Corrected_Z '
+
+        fig['layout']['yaxis3']['title']='Density distribution'
+        fig['layout']['xaxis3']['title']=f'Z [{self.si_unit_z.unitstr}]'
+        
+        fig['layout']['xaxis4']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['yaxis4']['title']='Z_average - Z_closest_step'
+
+        #         if not self.heights.values.any():
+#             return 'Heights values are not calculated yet.'
+#         bining= ax[0,0].hist(self.heights['corrected_Z_averaged'], bins=bins,
+#                         density=False)
+#         ax[0, 0].set_title('Heights with bins #= ' +str(bins), fontdict = {'fontsize': axfontsize})
+        
+
+#         #deviation = [i[0][2]-i[1] for i in hights]
+#         deviation = self.heights['initial_Z'] - self.heights['corrected_Z_averaged']
+#         deviation2 = self.heights['initial_Z'] - self.heights['corrected_Z_closest_step']
+
+#         ax[0,1].scatter(self.heights['initial_Z'],deviation, label = 'average')
+#         ax[0,1].scatter(self.heights['initial_Z'],deviation2, label = 'closest step')
+#         ax[1,1].scatter(self.heights['initial_Z'],self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_closest_step'], label = 'closest step')
+        
+#         KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
+#         X_plot = KernalPlot[:, np.newaxis]
+#         kde = KernelDensity(#kernel="epanechnikov",
+#                             kernel="gaussian",
+#                              bandwidth=bandwidth ).fit(X_plot)
+#         log_dens = kde.score_samples(X_plot)
+#         ax[1,0].scatter(X_plot[:, 0], np.exp(log_dens))
+#         ax[1,0].set_title('Heights Distribution with KernelDensity\n with bandwidth =  '+str(bandwidth),fontdict = {'fontsize': axfontsize})
+#         if subtitle:
+#             fig.suptitle(subtitle, fontsize=sub_fontsize)
+#         count_ax = 0
+#         for axs in ax.flat:
+#             if count_ax == 0:
+#                 axs.set(xlabel='Binned hights', ylabel='Cluster per Bin')
+#             if count_ax == 1:
+#                 axs.set(xlabel='Initial Z [m]', ylabel='Initial Z - Corrected Z')                
+#             if count_ax == 2:
+#                 axs.set(xlabel='Z [m]', ylabel='Density distribution')  
+#             if count_ax == 3:
+#                 axs.set(xlabel='Z [m]', ylabel='Z_average - Z_closest_step')                  
+#             count_ax += 1
+#         fig.tight_layout()
+#         ax[0,1].legend()
+       
+#         if return_bining:
+#             return (bining, X_plot, log_dens)
+        fig.show()
