@@ -104,7 +104,7 @@ The adjustment can also be performed on individual regions, if needed. Hier just
 my_pic.regions[166].thold_default_factor=0.3
 __= my_pic.regions[166].find_groundlevel()
 __= my_pic.regions[166].calc_true_hight()
-my_pic.update_height(hot2.regions[166],166) #need to update the list of results
+my_pic.update_height(my_pic.regions[166],166) #you need to update the list of results
 my_pic.regions[166].plot_ground_level(axis_view =(0,0))
 ```
 
