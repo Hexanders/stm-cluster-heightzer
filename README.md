@@ -80,14 +80,16 @@ After that the correction of the heights of each cluster can start, parralel_cor
 
 
 ```
-my_pic.parralel_correct_height(seek_for_steps='both',
-                                    cutoff_points=4, 
-                                    slope_threshold_factor=0.1,
-                                     thold_default_factor=0.9)
+my_pic.parralel_correct_height(slope_threshold_factor=0.1,
+                                    threshold = 'default',
+                                     thold_default_factor=0.9,
+                                     seek_for_steps='both')
 ```
+
 
 The slope_threshold_factor defines how steep is the slope used to determine the ground level. Must be adjusted mostly on the first image and then it is the same for all similar measurements.
 
+threshold = 'default' means that the criterion for the separation of individual steps in ground level is taken as the square root of the sum of the distances between the maxima and minima coordinates sqrt( abs(x_max -x_min)^2 + abs(...) ) (see parameter t for scipy.cluster.hierarchy.fcluster(Z,t)). With thold_default_factor you can scale this parameter 0.9 means 90%
 
 If the parameter seek_for_steps = 'both' is set then the script tries to determine the steps in the region in addition to the averaged value of the ground level. It tries to group the points with the parameter thold_default_factor. The larger the factor, the further apart the centers of the grouped points may lie. The adjustment can also be performed on individual regions, this must often be done on the steps. 
 
