@@ -92,8 +92,14 @@ The slope_threshold_factor defines how steep is the slope used to determine the 
 If the parameter seek_for_steps = 'both' is set then the script tries to determine the steps in the region in addition to the averaged value of the ground level. It tries to group the points with the parameter thold_default_factor. The larger the factor, the further apart the centers of the grouped points may lie. The adjustment can also be performed on individual regions, this must often be done on the steps. 
 
 
-cutoff_points: if the number of points in one of the groups is equal to cutoff_points then they are not considered as a group (eleminate artifacts)
-
+In this particular example this is needet for region nr 166
+```
+my_pic.regions[166].thold_default_factor=4.5
+__= my_pic.regions[166].find_groundlevel()
+__= my_pic.regions[166].calc_true_hight()
+my_pic.regions[166].plot_ground_level(axis_view =(0,0))
+```
+![](example/pictures/single_region.png)
 
 An finaly you get an PandasDataFrame with all cluster coordinates, heights and corrected heights.
 ```
