@@ -203,7 +203,12 @@ class region():
             ax1.view_init(axis_view[0],axis_view[1])
         X,Y,Z = self.coordinates[:,0],self.coordinates[:,1],self.coordinates[:,2]
         ax1.plot_trisurf(X, Y, Z,  linewidth=0.1, cmap=cm.jet, alpha = 0.8)
-        #ax1.set_xticklabels('')
+        ax1.set_title('Original data')
+        ax2.set_title('Ground level ZY projection')
+        ax3.set_title('Ground level ZX projection')
+        ax4.set_title('Ground level XY projection')
+        
+        
         #ax1.set_yticklabels('')
         ax1.set_zticklabels('')
         ax1.dist = 8
