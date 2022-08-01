@@ -86,12 +86,14 @@ Similar computaion can be done on one cor by using:
 ```
 my_pic.calc_true_height_4_every_region()
 ```
-An finaly you get an PandasDataFrame with all cluster coordinates, heights and corrected heights
+An finaly you get an PandasDataFrame with all cluster coordinates, heights and corrected heights.
 ```
 my_pic.heights
 ```
 ![](example/pictures/heights.png)
 
+
+The x,y coordinates are in pixels and x_m/y_m coordinates are in physical dimensions (in this case meters). The coordinates in pixels are used for simplicity, because so the search for pixels with the eye, in my opinion, is easy.  
 
 By using plot_heights_distribution() you can see some statistics:
 ```
