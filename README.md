@@ -85,13 +85,14 @@ my_pic.parralel_correct_height(seek_for_steps='both',
                                     slope_threshold_factor=0.1,
                                      thold_default_factor=0.9)
 ```
-Similar computaion can be done on one cor by using:
 
-```
-my_pic.calc_true_height_4_every_region()
-```
+The slope_threshold_factor defines how steep is the slope used to determine the ground level. Must be adjusted mostly on the first image and then it is the same for all similar measurements.
 
 
+If the parameter seek_for_steps = 'both' is set then the script tries to determine the steps in the region in addition to the averaged value of the ground level. It tries to group the points with the parameter thold_default_factor. The larger the factor, the further apart the centers of the grouped points may lie. The adjustment can also be performed on individual regions, this must often be done on the steps. 
+
+
+cutoff_points: if the number of points in one of the groups is equal to cutoff_points then they are not considered as a group (eleminate artifacts)
 
 
 An finaly you get an PandasDataFrame with all cluster coordinates, heights and corrected heights.
