@@ -26,7 +26,7 @@ class Capturing(list):
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
         del self._stringio    # free up some memory
-        sys.stdout = self._stdout
+        #sys.stdout = self._stdout
 
 @dataclass
 class region():
@@ -52,7 +52,7 @@ class region():
         Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
 
        Returns:
-            ground_level: list:
+            ground_level (list):
                 list of x,y,z, all points in cuted area of cluster wich are belonging to ground level
         """
         x_min =  self.coordinates[:,0].min() # region_data came from matplotlib.path and ist is not array, hier konvert to squer array with nan if no value. still empty array 
@@ -67,7 +67,7 @@ class region():
                 if np.any(self.coordinates[xxx[0]]):
                     full_dim_array[i][j] = self.coordinates[xxx[0]][0][2]
         rda = rdarray(full_dim_array, no_data=-9999)  # calculate slope of the region
-        with Capturing() as output:
+        with Capturing() as output: # eliminate print outs from TerrainAttribute()
             terr_data = TerrainAttribute(rda,
                                    attrib='slope_riserun'
                                   )

@@ -11,27 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import multiprocessing 
 from sklearn.neighbors import KernelDensity
-
 import time
 
-class Capturing(list):
-    """
-    Capture print() returns to the IO into a list
-    
-    Source: https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
-    Usage:
-        >>with Capturing() as output:
-        >>    do_something(my_object)
-        output: list with all prints in it
-    """
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio    # free up some memory
-        sys.stdout = self._stdout
+
         
 def load_from_gwyddion(path):
     """
@@ -466,11 +448,9 @@ class clusterpic():
     def cut_image_regions(self, window = None):
         """
         Cuts the image data in to regions around clusters determine by Voronoi algorithm if window id None. If window is given: cuts image in squers with the length of window
-        Parameters:
-            data: 2d numpy array, STM Image
-            cluster_coordinates: Nx3 numpy array, ([x1,y2,z3], ...) the coordinates of clusters peeaks, z coordinate ist absolut
-        Returns:
-            list: [( Nx3 numpy.array, (x,y,z) ),...] list of all reagions with the regions data (Nx3 numpy.array) and coordinate of the custerpeak (x,y,z)
+        
+        Args:
+            window (int): length of a side of a rectangular for the window bilding arraound a cluster 
         """
         
         if window is not None:
