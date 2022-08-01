@@ -91,17 +91,21 @@ The slope_threshold_factor defines how steep is the slope used to determine the 
 
 threshold = 'default' means that the criterion for the separation of individual steps in ground level is taken as the square root of the sum of the distances between the maxima and minima coordinates sqrt( abs(x_max -x_min)^2 + abs(...) ) (see parameter t for scipy.cluster.hierarchy.fcluster(Z,t)). With thold_default_factor you can scale this parameter 0.9 means 90%
 
-If the parameter seek_for_steps = 'both' is set then the script tries to determine the steps in the region in addition to the averaged value of the ground level. It tries to group the points with the parameter thold_default_factor. The larger the factor, the further apart the centers of the grouped points may lie. The adjustment can also be performed on individual regions, this must often be done on the steps. 
+If the parameter seek_for_steps = 'both' is set then the script tries to determine the steps in the region in addition to the averaged value of the ground level. It tries to group the points with the parameter thold_default_factor. The larger the factor, the further apart the centers of the grouped points may lie (see scipy.cluster.hierarchy.fcluster). 
+
+![](example/pictures/singel_region.png)
 
 
-In this particular example this is needet for region nr 166
+The adjustment can also be performed on individual regions, if needed. Hier just an example with wrong threshold  
 ```
-my_pic.regions[166].thold_default_factor=4.5
+my_pic.regions[166].thold_default_factor=0.3
 __= my_pic.regions[166].find_groundlevel()
 __= my_pic.regions[166].calc_true_hight()
 my_pic.regions[166].plot_ground_level(axis_view =(0,0))
 ```
-![](example/pictures/singel_region.png)
+
+
+![](example/pictures/singel_region_wrong_threshold.png)
 
 as you can see, 2 groups were found in the ground level. The middle point (midpoint between 4 points: maximum and minimum x/y coordinates) of the "Groupe:0" is closer to the coordinates of the peak only 1.12 pixel. So this is taken as the ground level belonging to the peak and the average of these points is subtracted from the original height of the peak and stored in the instance true_hight_closest_ground_level.
 
