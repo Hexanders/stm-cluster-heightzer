@@ -95,6 +95,9 @@ If the parameter seek_for_steps = 'both' is set then the script tries to determi
 
 ![](example/pictures/singel_region.png)
 
+as you can see, 2 groups were found in the ground level. The middle point (midpoint between 4 points: maximum and minimum x/y coordinates) of the "Groupe:0" is closer to the coordinates of the peak only 1.12 pixel. So this is taken as the ground level belonging to the peak and the average of these points is subtracted from the original height of the peak and stored in the instance true_hight_closest_ground_level.
+
+
 
 The adjustment can also be performed on individual regions, if needed. Hier just an example with wrong threshold  
 ```
@@ -107,7 +110,6 @@ my_pic.regions[166].plot_ground_level(axis_view =(0,0))
 
 ![](example/pictures/singel_region_wrong_threshold.png)
 
-as you can see, 2 groups were found in the ground level. The middle point (midpoint between 4 points: maximum and minimum x/y coordinates) of the "Groupe:0" is closer to the coordinates of the peak only 1.12 pixel. So this is taken as the ground level belonging to the peak and the average of these points is subtracted from the original height of the peak and stored in the instance true_hight_closest_ground_level.
 
 
 
