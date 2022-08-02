@@ -815,7 +815,7 @@ class clusterpic():
         if return_bining:
             return (bining, X_plot, log_dens)
         
-    def plot_heights_distribution_interactice(self,
+    def plot_heights_distribution_interactive(self,
                                               bins = 10, 
                         bandwidth = 0.3E-9, 
                         figsize = (8,8), 
