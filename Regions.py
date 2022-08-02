@@ -38,6 +38,7 @@ class region():
     ground_level_regions : list[np.ndarray] = field(default_factory = list)
     true_hight : float = None
     true_hight_closest_ground_level : float = None
+    closest_ground_level_group_nr : float = None 
     slope_threshold_factor: float = 0.1 
     groundlevel_cutoff: float = 0.30 
     method: str ='complete'
@@ -149,6 +150,7 @@ class region():
         
         for i in self.ground_level_regions:
             if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
+                counter +=1
                 continue
             mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
             distance = np.sqrt(abs(mean_x - self.cluster_peak_coordinates[0])**2. + abs(mean_y - self.cluster_peak_coordinates[1])**2.)
@@ -160,8 +162,12 @@ class region():
             
             
         try:
+            if not self.closest_ground_level_group_nr:
+                self.closest_ground_level_group_nr = min_distance[1]
+            if len(self.ground_level_regions) == 1:
+                self.closest_ground_level_group_nr = 0
             avaraged_heigt_of_closest_groundlevel = self.cluster_peak_coordinates[2] - np.average(
-                self.ground_level_regions[min_distance[1]][:,2])
+                self.ground_level_regions[self.closest_ground_level_group_nr][:,2])
         except TypeError as err:
             avaraged_heigt_of_closest_groundlevel = None                
         
