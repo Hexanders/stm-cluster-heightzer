@@ -849,10 +849,15 @@ class clusterpic():
                    x=binning2[1], 
                    name ='Distribution closest step',
                    marker_color= color_closest_step,
-                   offsetgroup=2)
+                   offsetgroup=2,
+                   opacity = 0.8
+                  )
         ]
         fig.add_traces(bar_data, rows=1, cols=1)
-        fig.update_layout(barmode='group')
+        fig.update_layout(barmode='overlay',
+                          bargap=0.0,
+                          # bargroupgap=0.0
+                         )
         KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
         X_plot = KernalPlot[:, np.newaxis]
         kde = KernelDensity(#kernel="epanechnikov",
