@@ -15,31 +15,6 @@ import time
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
         
-def load_from_gwyddion(path):
-    """
-    Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
-    (so for UP, DOWN, FORWORD, BACKWARD)
-    
-    Returns:
-        list of clusterpic objects
-    """
-    obj = gwyload(path)
-    channels = get_datafields(obj)
-    objreturn =[]
-    for i in channels.keys():
-        #print(channels[i])
-        objreturn.append(clusterpic(
-                    path = path,
-                    name = i,
-                    data = channels[i].data,
-                    xres = channels[i]['xres'],
-                    yres = channels[i]['yres'],
-                    xreal = channels[i]['xreal'],
-                    yreal = channels[i]['yreal'],
-                    si_unit_xy = channels[i]['si_unit_xy'],
-                    si_unit_z = channels[i]['si_unit_z']
-                ))
-    return objreturn
 
 class clusterpic():
     """
@@ -98,8 +73,23 @@ class clusterpic():
             self.xreal = xmeter_per_pix*self.data.shape[1]
             
     def __repr__(self):
-        return f"Name: {self.name}"  
+        return f"Name: {self.name}"
     
+    def dump_picture(self,
+                     prefix : str = None, 
+                           folder : str = None) -> pickle:
+        """
+        Saves the hole clusterpic object into a pickel file with prefix and folder 
+        """
+        if prefix:
+            dump_path = '[%s]%s_clusterpic_obj.pkl' %( str(prefix) , self.name)
+        else:
+            dump_path = '%s_clusterpic_obj.pkl' %(self.name)
+        if folder:
+            dump_path = folder+dump_path
+        with open(dump_path, 'wb') as pickle_file:
+            pickle.dump(self,pickle_file)
+
     def dump_calculated_heights(self, 
                            prefix = None, 
                            folder=None):
@@ -868,7 +858,7 @@ class clusterpic():
             go.Bar(y = binning2[0],x=binning2[1], name ='Distribution closest step', offsetgroup=2)
         ]
         fig.add_traces(bar_data, rows=1, cols=1)
-        fig.update_layout(barmode='group', xaxis_tickangle=-45)
+        fig.update_layout(barmode='group')
         KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
         X_plot = KernalPlot[:, np.newaxis]
         kde = KernelDensity(#kernel="epanechnikov",
@@ -920,6 +910,7 @@ class clusterpic():
                       row=2, col=2)
         fig['layout']['xaxis']['title']='Binned heights'
         fig['layout']['yaxis']['title']='Cluster per bin'
+        fig['layout']['xaxis']['tickformat']= 'E'
 
         fig['layout']['xaxis2']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
         fig['layout']['yaxis2']['title']='Initial_Z - Corrected_Z '
@@ -929,6 +920,7 @@ class clusterpic():
         
         fig['layout']['yaxis3']['title']='Density distribution'
         fig['layout']['xaxis3']['title']=f'Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['xaxis3']['tickformat']= 'E'
         
         fig['layout']['xaxis4']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
         fig['layout']['yaxis4']['title']='Z_average - Z_closest_step'
@@ -936,3 +928,36 @@ class clusterpic():
         fig['layout']['xaxis4']['tickformat']= 'E'
     
         fig.show()
+def load_from_gwyddion(path : str) -> clusterpic: 
+    """
+    Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
+    (so for UP, DOWN, FORWORD, BACKWARD)
+    
+    Returns:
+        list of clusterpic objects
+    """
+    obj = gwyload(path)
+    channels = get_datafields(obj)
+    objreturn =[]
+    for i in channels.keys():
+        #print(channels[i])
+        objreturn.append(clusterpic(
+                    path = path,
+                    name = i,
+                    data = channels[i].data,
+                    xres = channels[i]['xres'],
+                    yres = channels[i]['yres'],
+                    xreal = channels[i]['xreal'],
+                    yreal = channels[i]['yreal'],
+                    si_unit_xy = channels[i]['si_unit_xy'],
+                    si_unit_z = channels[i]['si_unit_z']
+                ))
+    return objreturn
+
+def load_from_pickle(path : str) -> clusterpic:
+    """
+    Loads saved clusterpic object frome pickle file in path
+    """
+    with open(path, "rb") as input_file:
+            clusterpic_obj = pickle.load(input_file)
+    return clusterpic_obj
