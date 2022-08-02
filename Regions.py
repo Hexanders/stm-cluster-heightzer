@@ -162,7 +162,7 @@ class region():
             
             
         try:
-            if not self.closest_ground_level_group_nr:
+            if self.closest_ground_level_group_nr is None:
                 self.closest_ground_level_group_nr = min_distance[1]
             if len(self.ground_level_regions) == 1:
                 self.closest_ground_level_group_nr = 0
