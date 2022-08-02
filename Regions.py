@@ -38,6 +38,7 @@ class region():
     ground_level_regions : list[np.ndarray] = field(default_factory = list)
     true_hight : float = None
     true_hight_closest_ground_level : float = None
+    true_hight_heighest_ground_level : float = None
     closest_ground_level_group_nr : float = None 
     slope_threshold_factor: float = 0.1 
     groundlevel_cutoff: float = 0.30 
@@ -110,7 +111,7 @@ class region():
             """
         z_max = self.cluster_peak_coordinates[2]
         if self.seek_for_steps:
-            self.true_hight_closest_ground_level = self.seek_steps_in_ground_level()
+            self.true_hight_closest_ground_level, self.true_hight_heighest_ground_level = self.seek_steps_in_ground_level()
             self.true_hight = z_max - np.average(self.ground_level[:,2])
                 
         elif self.seek_for_steps == False:
@@ -147,17 +148,23 @@ class region():
         n = self.cutoff_points # cut off criterium for quantity of points inside an clustered ground_level, e.g. artifactes of 'jumping' stm tip
         counter = 0
         
-        
+        heighest_mean_Z = None # heihest mean Z of steps
         for i in self.ground_level_regions:
             if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
                 counter +=1
                 continue
+            
             mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
             distance = np.sqrt(abs(mean_x - self.cluster_peak_coordinates[0])**2. + abs(mean_y - self.cluster_peak_coordinates[1])**2.)
             if min_distance is None:  # finde smallest distance in xy to the cluster center
                 min_distance = (distance, counter)
             if min_distance[0] > distance:
                 min_distance = (distance, counter)
+                
+            if heighest_mean_Z is None:
+                heighest_mean_Z = (np.average(i[:,2]), counter)
+            elif heighest_mean_Z[0] < np.average(i[:,2]):
+                heighest_mean_Z = (np.average(i[:,2]), counter)                                              
             counter +=1
             
             
@@ -168,11 +175,12 @@ class region():
                 self.closest_ground_level_group_nr = 0
             avaraged_heigt_of_closest_groundlevel = self.cluster_peak_coordinates[2] - np.average(
                 self.ground_level_regions[self.closest_ground_level_group_nr][:,2])
+            avaraged_heigt_of_highest_groundlevel = self.cluster_peak_coordinates[2] - heighest_mean_Z[0]
         except TypeError as err:
             avaraged_heigt_of_closest_groundlevel = None                
         
         
-        return avaraged_heigt_of_closest_groundlevel
+        return avaraged_heigt_of_closest_groundlevel, avaraged_heigt_of_highest_groundlevel
     
     def plot_ground_level(self, 
                           figsize = (10,8),

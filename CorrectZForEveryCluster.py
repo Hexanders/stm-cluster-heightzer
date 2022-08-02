@@ -58,7 +58,8 @@ class clusterpic():
                                                f'y_{self.si_unit_xy.unitstr}',
                                                'initial_Z', 
                                                'corrected_Z_averaged', 
-                                               'corrected_Z_closest_step'])
+                                               'corrected_Z_closest_step',
+                                              'corrected_Z_highest_step'])
         self.cluster_distribution = None
         
         if (self.data.shape[0] == self.data.shape[1]) == False:
@@ -717,8 +718,9 @@ class clusterpic():
         y_m = y*self.yreal/self.yres
         true_height = region.true_hight
         true_height_closest= region.true_hight_closest_ground_level
+        true_height_heighest= region.true_hight_heighest_ground_level
         # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
-        self.heights.loc[index] = [x,y,x_m,y_m,z, true_height, true_height_closest]
+        self.heights.loc[index] = [x,y,x_m,y_m,z, true_height, true_height_closest,true_height_heighest]
     def show_regions(self, 
                      figsize =(10,10), 
                      alpha = 0.65,
@@ -836,8 +838,11 @@ class clusterpic():
         
         binning2 = plt.hist(self.heights['corrected_Z_closest_step'], bins=bins,
                         density=False)
+        
+        binning3 = plt.hist(self.heights['corrected_Z_highest_step'], bins=bins,
+                        density=False)
           
-        color_average, color_closest_step = ['black', 'red']
+        color_average, color_closest_step, color_highest_step = ['black', 'red', 'green']
         
         bar_data = [
             go.Bar(y = binning[0],x=binning[1],
@@ -849,6 +854,14 @@ class clusterpic():
                    x=binning2[1], 
                    name ='Distribution closest step',
                    marker_color= color_closest_step,
+                   offsetgroup=2,
+                   opacity = 0.8
+                  ),
+            
+            go.Bar(y = binning3[0],
+                   x=binning3[1], 
+                   name ='Distribution highest step',
+                   marker_color= color_highest_step,
                    offsetgroup=2,
                    opacity = 0.8
                   )
@@ -872,8 +885,16 @@ class clusterpic():
                              bandwidth=bandwidth ).fit(X_plot2)
         log_dens2 = kde.score_samples(X_plot2)
         
+        KernalPlot3 = self.heights['corrected_Z_highest_step'].to_numpy()
+        X_plot3= KernalPlot3[:, np.newaxis]
+        kde3 = KernelDensity(#kernel="epanechnikov",
+                            kernel="gaussian",
+                             bandwidth=bandwidth ).fit(X_plot3)
+        log_dens3 = kde.score_samples(X_plot3)
+        
         deviation = self.heights['initial_Z'] - self.heights['corrected_Z_averaged']
         deviation2 = self.heights['initial_Z'] - self.heights['corrected_Z_closest_step']
+        deviation3 = self.heights['initial_Z'] - self.heights['corrected_Z_highest_step']
         
         fig.add_trace(go.Scattergl(x=X_plot[:, 0],
                                    y=np.exp(log_dens),
@@ -887,6 +908,13 @@ class clusterpic():
                                    marker= dict(color = color_closest_step,
                                                opacity = 0.8),
                                    name ='Kernel Density closest step'),
+                      row=2, col=1)
+        fig.add_trace(go.Scattergl(x=X_plot3[:, 0],
+                                   y=np.exp(log_dens3),
+                                   mode='markers',
+                                   marker= dict(color = color_highest_step,
+                                               opacity = 0.8),
+                                   name ='Kernel Density highest step'),
                       row=2, col=1)
 
         text = [f'Nr: {string1}<br>z_average: {Decimal(string2):.3E}' for string1, string2 in zip(self.heights.index.values, self.heights['corrected_Z_averaged'])]
@@ -917,6 +945,22 @@ class clusterpic():
                                   )
                       ,
                       row=1, col=2)
+        text4 = [f'Nr: {string1}<br>z_heighest_step: {Decimal(string2):.3E}' for string1, string2 in zip(self.heights.index.values, self.heights['corrected_Z_highest_step'])]
+        
+        fig.add_trace(go.Scattergl( x = self.heights['initial_Z'], 
+                                   y= deviation3, 
+                                   # text = self.heights.index.values,
+                                   text = text4,
+                                   hoverinfo = 'text', 
+                                   name = 'highest step', 
+                                   mode = 'markers',
+                                   marker = dict(color = color_highest_step,
+                                                 symbol = 'arrow-down',
+                                                 opacity = 1)
+                                  )
+                      ,
+                      row=1, col=2)
+        
         text3 = [f'Nr: {string1}<br>z_averaged: {Decimal(string2):.3E}<br>z_closest_step: {Decimal(string3):.3E}' for string1, string2, string3 in zip(self.heights.index.values,self.heights['corrected_Z_averaged'], self.heights['corrected_Z_closest_step'])]
         
         fig.add_trace(go.Scattergl(x = self.heights['initial_Z'], 
@@ -931,6 +975,24 @@ class clusterpic():
                                                  )
                                   ),
                       row=2, col=2)
+        
+        
+        
+        text5 = [f'Nr: {string1}<br>z_averaged: {Decimal(string2):.3E}<br>z_highest_step: {Decimal(string3):.3E}' for string1, string2, string3 in zip(self.heights.index.values,self.heights['corrected_Z_averaged'], self.heights['corrected_Z_highest_step'])]
+        
+        fig.add_trace(go.Scattergl(x = self.heights['initial_Z'], 
+                                   y = self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_highest_step'], 
+                                    # text = self.heights.index.values,
+                                    text = text3,
+                                   hoverinfo = 'text', 
+                                   name = 'average - highest step', 
+                                   mode = 'markers',
+                                   marker = dict(color = 'black',
+                                                 symbol = 'star',
+                                                 )
+                                  ),
+                      row=2, col=2)
+        
         fig['layout']['xaxis']['title']='Binned heights'
         fig['layout']['yaxis']['title']='Cluster per bin'
         fig['layout']['xaxis']['tickformat']= 'E'
