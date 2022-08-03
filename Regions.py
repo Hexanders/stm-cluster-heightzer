@@ -256,10 +256,12 @@ class region():
                         marker = 'x', 
                         label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h:%s, h_step: %s' %
+        fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h:%s, h_step: %s, h_heighest: %s' %
                                                                 ('{:0.3e}'.format(self.cluster_peak_coordinates[2]), 
                                                                  '{:0.3e}'.format(self.true_hight),
-                                                                '{:0.3e}'.format(self.true_hight_closest_ground_level)
+                                                                '{:0.3e}'.format(self.true_hight_closest_ground_level),
+                                                                '{:0.3e}'.format(self.true_hight_heighest_ground_level),
+                                                                 
                                                                 ))
         plt.tight_layout()
         if saveimage:

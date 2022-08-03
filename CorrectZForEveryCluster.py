@@ -15,6 +15,8 @@ import time
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from decimal import Decimal
+import traceback
+import logging
 
 class clusterpic():
     """
@@ -540,11 +542,15 @@ class clusterpic():
             region.cutoff_points = cutoff_points
             region.seek_for_steps = seek_for_steps
         a_pool = multiprocessing.Pool()
-        self.regions = a_pool.map(self.correct_heights_4_regions,
-                                  self.regions)
+        try:
+            self.regions = a_pool.map(self.correct_heights_4_regions,
+                                      self.regions)
+            a_pool.close()
+        except Exception as e:
+            a_pool.close()            
+            logging.error(traceback.format_exc())
         for idx,i in enumerate(self.regions):# collecting corrected hights
             self.update_height(i, idx)
-
     def correct_heights_4_regions(self, i):
         """
         just needed fo parralel_correct_height()
