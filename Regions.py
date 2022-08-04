@@ -9,6 +9,9 @@ from scipy.cluster.hierarchy import fcluster
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+
+
+
 class Capturing(list):
     """
     Capture print() returns to the IO into a list
@@ -48,7 +51,9 @@ class region():
     thold_default_factor: float = 1.1
     cutoff_points: int =  5
     seek_for_steps: bool = False
-
+    
+    
+    
     def find_groundlevel(self):
         """
         Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
@@ -229,7 +234,7 @@ class region():
         
         
         #ax1.set_yticklabels('')
-        ax1.set_zticklabels('')
+        #ax1.set_zticklabels('')
         ax1.dist = 8
         counter = 0
         min_distance = None

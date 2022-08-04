@@ -17,6 +17,7 @@ from plotly.subplots import make_subplots
 from decimal import Decimal
 import traceback
 import logging
+import beepy
 
 class clusterpic():
     """
@@ -547,6 +548,7 @@ class clusterpic():
                                       self.regions)
             a_pool.close()
         except Exception as e:
+            beepy.beep(sound=3)
             a_pool.close()
             logging.error(traceback.format_exc())
         for idx,i in enumerate(self.regions):# collecting corrected hights
