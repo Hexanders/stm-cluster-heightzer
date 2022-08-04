@@ -124,7 +124,7 @@ my_pic.heights
 
 The x,y coordinates are in pixels and x_m/y_m coordinates are in physical dimensions (in this case meters). The coordinates in pixels are used for simplicity, because so the search for pixels with the eye, in my opinion, is easy.  
 
-By using plot_heights_distribution() you can see some statistics:
+By using plot_heights_distribution() you can see some statistics (plotly interactiv image):
 ```
 my_pic.plot_heights_distribution()
 ```
