@@ -124,10 +124,14 @@ class region():
         in to clusters (see scipy.cluster.hierarchy)
         """
         ground_level = copy.deepcopy(self.ground_level)
-        factor = max(ground_level[:,0])/max(ground_level[:,2])  # normalization factor for Z for scipy.cluster.hierarchy.fcluster otherwise clustering of groundlevel points is not working in Z direction
-        
+        max_x = max(ground_level[:,0])
+        max_y = max(ground_level[:,1])
+        if max_x >= max_y:
+            factor = max(ground_level[:,0])/max(ground_level[:,2])# normalization factor for Z for scipy.cluster.hierarchy.fcluster otherwise clustering of groundlevel points is not working in Z direction
+        else:
+            factor = max(ground_level[:,1])/max(ground_level[:,2])
         ground_level[:,2] =ground_level[:,2]*factor  #normalize Z
-
+  
         Z = linkage(ground_level,
                 method=self.method,  # dissimilarity metric: max distance across all pairs of 
                                         # records between two clusters

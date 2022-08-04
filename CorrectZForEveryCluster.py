@@ -129,7 +129,7 @@ class clusterpic():
             if prefix:
                 dump_path = '[%s]%s_cluster_coordinates.pkl' %( str(prefix) , self.name)
             else:
-                dump_path = 's_cluster_coordinates.pkl' %(self.name)
+                dump_path = '%s_cluster_coordinates.pkl' %(self.name)
             if folder:
                 dump_path = folder+dump_path
             with open(dump_path, 'wb') as pickle_file:
@@ -547,10 +547,11 @@ class clusterpic():
                                       self.regions)
             a_pool.close()
         except Exception as e:
-            a_pool.close()            
+            a_pool.close()
             logging.error(traceback.format_exc())
         for idx,i in enumerate(self.regions):# collecting corrected hights
             self.update_height(i, idx)
+            
     def correct_heights_4_regions(self, i):
         """
         just needed fo parralel_correct_height()
@@ -1014,7 +1015,7 @@ class clusterpic():
         fig['layout']['xaxis3']['tickformat']= 'E'
         
         fig['layout']['xaxis4']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
-        fig['layout']['yaxis4']['title']='Z_average - Z_closest_step'
+        fig['layout']['yaxis4']['title']='Z_average - Z_step'
         fig['layout']['yaxis4']['tickformat']= 'E'
         fig['layout']['xaxis4']['tickformat']= 'e'
     
