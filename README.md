@@ -80,9 +80,9 @@ After that the correction of the heights of each cluster can start, parralel_cor
 
 
 ```
-my_pic.parralel_correct_height(slope_threshold_factor=0.1,
+my_pic.parralel_correct_height(slope_threshold_factor=0.5,
                                     threshold = 'default',
-                                     thold_default_factor=0.9,
+                                     thold_default_factor=0.2,
                                      seek_for_steps='both')
 ```
 
@@ -101,7 +101,7 @@ as you can see, 2 groups were found in the ground level. The middle point (midpo
 
 The adjustment can also be performed on individual regions, if needed. Hier just an example with wrong threshold  
 ```
-my_pic.regions[166].thold_default_factor=0.3
+my_pic.regions[166].thold_default_factor=0.2
 __= my_pic.regions[166].find_groundlevel()
 __= my_pic.regions[166].calc_true_hight()
 my_pic.update_height(my_pic.regions[166],166) #you need to update the list of results
