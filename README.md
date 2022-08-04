@@ -101,11 +101,11 @@ as you can see, 2 groups were found in the ground level. The middle point (midpo
 
 The adjustment can also be performed on individual regions, if needed. Hier just an example with wrong threshold  
 ```
-my_pic.regions[166].thold_default_factor=0.2
-__= my_pic.regions[166].find_groundlevel()
-__= my_pic.regions[166].calc_true_hight()
-my_pic.update_height(my_pic.regions[166],166) #you need to update the list of results
-my_pic.regions[166].plot_ground_level(axis_view =(0,0))
+my_pic.regions[95].thold_default_factor=0.2
+__= my_pic.regions[95].find_groundlevel()
+__= my_pic.regions[95].calc_true_hight()
+my_pic.update_height(my_pic.regions[95],95) #you need to update the list of results
+my_pic.regions[95].plot_ground_level(axis_view =(0,0))
 ```
 
 
