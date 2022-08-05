@@ -76,7 +76,7 @@ ax, picable_artists = my_pic.cluster_peaker(show_regions= True, alpha = 0.4)
 The Voronoi pattern is more suitable when the clusters are close to each other and it is difficult to separate the clusters with rectangular windows. The Window pattern is probably the most common case and should be used preferably because otherwise the calculation time increases since the larger the windows the more points have to be calculated.
 
 
-After that the correction of the heights of each cluster can start, parralel_correct_height() method calculates and corrects the heights by calculating the slopes in each point with Filfe con richdem package (see https://richdem.readthedocs.io/en/latest/) and then decides what is ground level and what is peak. Here only this short explanation, the rest you can read in the docstring or ask me directly.
+After that the correction of the heights of each cluster can start, parralel_correct_height() method calculates and corrects the heights by calculating the slopes in each point with the help of richdem package (see https://richdem.readthedocs.io/en/latest/) and then decides what is ground level and what is peak. Here only this short explanation, the rest you can read in the docstring or ask me directly.
 
 
 ```
@@ -101,11 +101,11 @@ as you can see, 2 groups were found in the ground level. The middle point (midpo
 
 The adjustment can also be performed on individual regions, if needed. Hier just an example with wrong threshold  
 ```
-my_pic.regions[166].thold_default_factor=0.2
-__= my_pic.regions[166].find_groundlevel()
-__= my_pic.regions[166].calc_true_hight()
-my_pic.update_height(my_pic.regions[166],166) #you need to update the list of results
-my_pic.regions[166].plot_ground_level(axis_view =(0,0))
+my_pic.regions[95].thold_default_factor=0.2
+__= my_pic.regions[95].find_groundlevel()
+__= my_pic.regions[95].calc_true_hight()
+my_pic.update_height(my_pic.regions[95],95) #you need to update the list of results
+my_pic.regions[95].plot_ground_level(axis_view =(0,0))
 ```
 
 
