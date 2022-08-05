@@ -226,7 +226,7 @@ class region():
         ax2.set_xlabel('y coordinate')
         ax2.set_ylabel('Z coordinate')
         if show_all_ground_level_points:
-            ax4.scatter(X,Y)
+            ax4.scatter(X,Y,facecolors='none', edgecolors = 'blue', label = 'Ground Level')
         ax4.set_xlabel('x coordinate')
         ax4.set_ylabel('y coordinate')
         ax1.remove()
@@ -249,7 +249,7 @@ class region():
         for Grcounter,i in enumerate(self.ground_level_regions):
             if len(i[:,0]) <=self.cutoff_points: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
                 continue
-            sc = ax4.scatter(i[:,0],i[:,1],  s = 2 , label = 'Group:%s' %Grcounter)
+            sc = ax4.scatter(i[:,0],i[:,1],  s = 5 , label = 'Group:%s' %Grcounter)
             colors = sc.get_facecolor()
             mean_x, mean_y = ((max(i[:,0])-min(i[:,0]))/2)+min(i[:,0]),((max(i[:,1])-min(i[:,1]))/2)+min(i[:,1])
             distance = np.sqrt(abs(mean_x - self.cluster_peak_coordinates[0])**2. + abs(mean_y-self.cluster_peak_coordinates[1])**2.)
