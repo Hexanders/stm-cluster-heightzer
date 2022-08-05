@@ -77,7 +77,7 @@ class clusterpic():
             self.xreal = xmeter_per_pix*self.data.shape[1]
             
     def __repr__(self):
-        return f"Name: {self.name}"
+        return f"{self.name}"
     
     def dump_picture(self,
                      prefix : str = None, 
@@ -965,6 +965,7 @@ class clusterpic():
         fig['layout']['xaxis4']['tickformat']= 'e'
     
         fig.show()
+        
 def load_from_gwyddion(path : str) -> clusterpic: 
     """
     Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
@@ -978,7 +979,8 @@ def load_from_gwyddion(path : str) -> clusterpic:
     objreturn =[]
     for i in channels.keys():
         #print(channels[i])
-        objreturn.append(clusterpic(
+        objreturn.append(
+            clusterpic(
                     path = path,
                     name = i,
                     data = channels[i].data,

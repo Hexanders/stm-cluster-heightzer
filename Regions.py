@@ -116,8 +116,8 @@ class region():
             """
         z_max = self.cluster_peak_coordinates[2]
         if self.seek_for_steps:
-            self.true_hight_closest_ground_level, self.true_hight_heighest_ground_level = self.seek_steps_in_ground_level()
             self.true_hight = z_max - np.average(self.ground_level[:,2])
+            self.true_hight_closest_ground_level, self.true_hight_heighest_ground_level = self.seek_steps_in_ground_level()
                 
         elif self.seek_for_steps == False:
             self.true_hight = z_max - np.average(self.ground_level[:,2])
@@ -158,6 +158,8 @@ class region():
         counter = 0
         
         heighest_mean_Z = None # heihest mean Z of steps
+        avaraged_heigt_of_closest_groundlevel = None  
+        avaraged_heigt_of_highest_groundlevel = None                
         for i in self.ground_level_regions:
             if len(i[:,0]) <=n: # Eliminate some artifacts, wenn the clustered ground_level has les then n points
                 counter +=1
@@ -177,18 +179,24 @@ class region():
             counter +=1
             
             
-        try:
             if self.closest_ground_level_group_nr is None:
                 self.closest_ground_level_group_nr = min_distance[1]
             if len(self.ground_level_regions) == 1:
-                self.closest_ground_level_group_nr = 0
-            avaraged_heigt_of_closest_groundlevel = self.cluster_peak_coordinates[2] - np.average(
+                self.closest_ground_level_group_nr = 0              
+            try:
+                avaraged_heigt_of_closest_groundlevel = self.cluster_peak_coordinates[2] - np.average(
                 self.ground_level_regions[self.closest_ground_level_group_nr][:,2])
-            avaraged_heigt_of_highest_groundlevel = self.cluster_peak_coordinates[2] - heighest_mean_Z[0]
-        except TypeError as err:
-            avaraged_heigt_of_closest_groundlevel = None                
-        
-        
+            except TypeError as err:
+                avaraged_heigt_of_closest_groundlevel = None            
+            try:
+                avaraged_heigt_of_highest_groundlevel = self.cluster_peak_coordinates[2] - heighest_mean_Z[0]
+            except TypeError as err:
+                avaraged_heigt_of_highest_groundlevel = None                
+            
+        if avaraged_heigt_of_closest_groundlevel is None:
+            avaraged_heigt_of_closest_groundlevel = self.true_hight   # if no closest step cold be found
+        if avaraged_heigt_of_highest_groundlevel is None: 
+            avaraged_heigt_of_highest_groundlevel = self.true_hight
         return avaraged_heigt_of_closest_groundlevel, avaraged_heigt_of_highest_groundlevel
     
     def plot_ground_level(self, 
