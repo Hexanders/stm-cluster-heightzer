@@ -1000,3 +1000,34 @@ def load_from_pickle(path : str) -> clusterpic:
     with open(path, "rb") as input_file:
             clusterpic_obj = pickle.load(input_file)
     return clusterpic_obj
+
+def del_edge_clusters_by_pix(toProzess: clusterpic, deltPix: int = 0 ):
+    """
+    Delets clusters on the edge of the picture/dataset. Because it is probabely not the real highest spot
+    
+    Parameters:
+        toProzess (clusterpic): STM Image clusterpic object where the edge cluster have to be removed
+        deltPix: how many pixes from the edge are considerd vor deletation. E.g. deltPix = 3: 3Pisel strips on the edge of the Picter were every cluster within this stripe will be deletes
+        
+    """
+    toProzess_t = toProzess.heights.T
+    def delete_multiple_element(list_object, indices):
+        indices = sorted(indices, reverse=True)
+        for idx in indices:
+            if idx < len(list_object):
+                list_object.pop(idx)
+    indexes_to_delet = []            
+    for index, row in toProzess.heights.iterrows():
+        if (row['x'] >= toProzess.xres-deltPix) or  (row['y'] >= toProzess.yres-deltPix): 
+            #print(index,row['x'], row['y'])
+            indexes_to_delet.append(index)
+            toProzess_t.pop(index)
+
+        if (row['x'] <= 0 + deltPix) or  (row['y'] <= 0 + deltPix): 
+            #print(index,row['x'], row['y'])
+            toProzess_t.pop(index)
+            indexes_to_delet.append(index)
+
+    toProzess.heights = toProzess_t.T
+    delete_multiple_element(toProzess.regions, indexes_to_delet) ## delet the regions with clusters on edge
+    toProzess.clusters_coord = np.delete(toProzess.clusters_coord,indexes_to_delet, axis=0) ## delete edge cluster from coordinate list
