@@ -18,6 +18,7 @@ from decimal import Decimal
 import traceback
 import logging
 import beepy
+from os import listdir
 
 class clusterpic():
     """
@@ -45,8 +46,15 @@ class clusterpic():
         self.yres = yres 
         self.xreal = xreal 
         self.yreal = yreal 
-        self.si_unit_xy = si_unit_xy
-        self.si_unit_z = si_unit_z
+        try:
+            self.si_unit_xy = si_unit_xy.unitstr
+        except:
+            self.si_unit_xy = si_unit_xy
+        try:
+            self.si_unit_z = si_unit_z.unitstr
+        except:
+            self.si_unit_z = si_unit_z
+            
         self.peak_XYdata = pd.DataFrame()
         self.clusters_coord = np.empty(0)
         self.ax = None
@@ -54,11 +62,12 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
+        
         # self.tmp = [] # for debuging
         self.heights = pd.DataFrame(columns = ['x',
                                                'y',
-                                               f'x_{self.si_unit_xy.unitstr}',
-                                               f'y_{self.si_unit_xy.unitstr}',
+                                               f'x_{self.si_unit_xy}',
+                                               f'y_{self.si_unit_xy}',
                                                'initial_Z', 
                                                'corrected_Z_averaged', 
                                                'corrected_Z_closest_step',
@@ -428,8 +437,8 @@ class clusterpic():
         # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
         #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
                                                
-        all_coord = np.array((self.heights[f'x_{self.si_unit_xy.unitstr}'],
-                              self.heights[f'y_{self.si_unit_xy.unitstr}'])).T # prepare 2d array vor surching distance
+        all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
+                              self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
 
         distribution = []
         for i in range(0, len(all_coord)):
@@ -778,6 +787,7 @@ class clusterpic():
                                             ))
 
         fig.update_layout(
+        title_text= f'{self.name}<br>{len(self.heights)}',
         autosize=False,
         width=figsize[0]*100,
         height=figsize[1]*100,
@@ -785,15 +795,22 @@ class clusterpic():
         )
 
         
-        binning = plt.hist(self.heights['corrected_Z_averaged'], bins=bins,
+#         binning = plt.hist(self.heights['corrected_Z_averaged'], bins=bins,
+#                         density=False)
+        
+#         binning2 = plt.hist(self.heights['corrected_Z_closest_step'], bins=bins,
+#                         density=False)
+        
+#         binning3 = plt.hist(self.heights['corrected_Z_highest_step'], bins=bins,
+#                         density=False)
+        binning = np.histogram(self.heights['corrected_Z_averaged'], bins=bins,
                         density=False)
         
-        binning2 = plt.hist(self.heights['corrected_Z_closest_step'], bins=bins,
+        binning2 = np.histogram(self.heights['corrected_Z_closest_step'], bins=bins,
                         density=False)
         
-        binning3 = plt.hist(self.heights['corrected_Z_highest_step'], bins=bins,
+        binning3 = np.histogram(self.heights['corrected_Z_highest_step'], bins=bins,
                         density=False)
-          
         color_average, color_closest_step, color_highest_step = ['black', 'red', 'green']
         
         bar_data = [
@@ -949,17 +966,17 @@ class clusterpic():
         fig['layout']['yaxis']['title']='Cluster per bin'
         fig['layout']['xaxis']['tickformat']= 'E'
 
-        fig['layout']['xaxis2']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['xaxis2']['title']=f'Initial Z [{self.si_unit_z}]'
         fig['layout']['yaxis2']['title']='Initial_Z - Corrected_Z '
         fig['layout']['yaxis2']['tickformat']= 'E'
         fig['layout']['xaxis2']['tickformat']= 'E'
         #fig['layout']['yaxis2']['rangemode']= 'tozero'
         
         fig['layout']['yaxis3']['title']='Density distribution'
-        fig['layout']['xaxis3']['title']=f'Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['xaxis3']['title']=f'Z [{self.si_unit_z}]'
         fig['layout']['xaxis3']['tickformat']= 'E'
         
-        fig['layout']['xaxis4']['title']=f'Initial Z [{self.si_unit_z.unitstr}]'
+        fig['layout']['xaxis4']['title']=f'Initial Z [{self.si_unit_z}]'
         fig['layout']['yaxis4']['title']='Z_average - Z_step'
         fig['layout']['yaxis4']['tickformat']= 'E'
         fig['layout']['xaxis4']['tickformat']= 'e'
@@ -999,6 +1016,7 @@ def load_from_pickle(path : str) -> clusterpic:
     """
     with open(path, "rb") as input_file:
             clusterpic_obj = pickle.load(input_file)
+    input_file.close()
     return clusterpic_obj
 
 def del_edge_clusters_by_pix(toProzess: clusterpic, deltPix: int = 0 ):
@@ -1031,3 +1049,20 @@ def del_edge_clusters_by_pix(toProzess: clusterpic, deltPix: int = 0 ):
     toProzess.heights = toProzess_t.T
     delete_multiple_element(toProzess.regions, indexes_to_delet) ## delet the regions with clusters on edge
     toProzess.clusters_coord = np.delete(toProzess.clusters_coord,indexes_to_delet, axis=0) ## delete edge cluster from coordinate list
+    
+def combine_heights(name:str = '', input_path: str = '', input_list: list = None, serach_patter: str = '') -> clusterpic:
+    if input_list is None:
+        input_list = listdir(input_path)
+    result_dfs = []
+    for i in input_list:
+        if serach_patter == '':
+            result_dfs.append(load_from_pickle(input_path+i).heights)
+        else:
+            if 'clusterpic_obj' in i:
+                result_dfs.append(load_from_pickle(input_path+i).heights)
+    result = pd.concat(result_dfs)
+    blup = clusterpic(data = np.zeros((10,10)), name=name)
+    blup.si_unit_xy = 'm'
+    blup.si_unit_z = 'm'
+    blup.heights = result
+    return blup
