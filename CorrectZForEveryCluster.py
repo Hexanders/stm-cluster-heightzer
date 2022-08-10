@@ -55,6 +55,10 @@ class clusterpic():
         except:
             self.si_unit_z = si_unit_z
             
+        if (self.xreal is not None) and (self.yreal is not None):
+            self.area = self.xreal * self.yreal
+        else:
+            self.area = None
         self.peak_XYdata = pd.DataFrame()
         self.clusters_coord = np.empty(0)
         self.ax = None
@@ -787,7 +791,7 @@ class clusterpic():
                                             ))
 
         fig.update_layout(
-        title_text= f'{self.name}<br>{len(self.heights)}',
+        title_text= f'<b>{self.name}</b><br><b>{len(self.heights)}:</b> total # of clusters',
         autosize=False,
         width=figsize[0]*100,
         height=figsize[1]*100,
