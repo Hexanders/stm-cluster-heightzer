@@ -94,14 +94,15 @@ class clusterpic():
     
     def dump_picture(self,
                      prefix : str = None, 
+                     sufix : str = '_clusterpic_obj',
                            folder : str = None) -> pickle:
         """
         Saves the hole clusterpic object into a pickel file with prefix and folder 
         """
         if prefix:
-            dump_path = '[%s]%s_clusterpic_obj.pkl' %( str(prefix) , self.name)
+            dump_path = '[%s]%s%s.pkl' %( str(prefix) , self.name, str(sufix))
         else:
-            dump_path = '%s_clusterpic_obj.pkl' %(self.name)
+            dump_path = '%s%s.pkl' %(self.name, str(sufix))
         if folder:
             dump_path = folder+dump_path
         with open(dump_path, 'wb') as pickle_file:
