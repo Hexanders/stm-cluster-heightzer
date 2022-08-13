@@ -1059,15 +1059,21 @@ def combine_heights(name:str = '', input_path: str = '', input_list: list = None
     if input_list is None:
         input_list = listdir(input_path)
     result_dfs = []
+    result_area = 0.0
     for i in input_list:
         if serach_patter == '':
-            result_dfs.append(load_from_pickle(input_path+i).heights)
-        else:
-            if 'clusterpic_obj' in i:
-                result_dfs.append(load_from_pickle(input_path+i).heights)
+            current_obj = load_from_pickle(input_path+i)
+            result_dfs.append(current_obj.heights)
+            result_area +=current_obj.area
+        elif serach_patter in i: #clusterpic_obj
+            current_obj = load_from_pickle(input_path+i)
+            result_dfs.append(current_obj.heights)
+            result_area += current_obj.area
+            #print(result_area)
     result = pd.concat(result_dfs)
     blup = clusterpic(data = np.zeros((10,10)), name=name)
     blup.si_unit_xy = 'm'
     blup.si_unit_z = 'm'
     blup.heights = result
+    blup.area = result_area
     return blup
