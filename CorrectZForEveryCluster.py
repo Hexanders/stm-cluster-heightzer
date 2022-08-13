@@ -674,11 +674,11 @@ class clusterpic():
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
-        vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
         if show_regions:
             if self.regions:
                 for i in self.regions:
                     if i.region_type == 'voronoi':
+                        vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
                         voronoi_plot_2d(vor, ax = ax, show_points = False)
                         break
                     elif 'rectangular' in i.region_type:
