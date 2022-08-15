@@ -565,6 +565,7 @@ class clusterpic():
             beepy.beep(sound=3)
             a_pool.close()
             logging.error(traceback.format_exc())
+        self.heights = self.heights[0:0] #empty heigths table
         for idx,i in enumerate(self.regions):# collecting corrected hights
             self.update_height(i, idx)
             
