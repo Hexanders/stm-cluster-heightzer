@@ -30,7 +30,7 @@ my_pic.show_data()
 
 ![](example/pictures/stm-data.png)
 
-Now you need to find the peaks in peacture
+Now you need to find the peaks in picture
 
 ```
 my_pic.find_peaks_in_rows()
