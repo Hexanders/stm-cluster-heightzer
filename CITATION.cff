@@ -1,0 +1,29 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: stm-cluster-heightzer
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alexander
+    family-names: Kononov
+    email: alexander.kononov@tu-dortmund.de
+repository-code: 'https://github.com/Hexanders/stm-cluster-heightzer'
+abstract: >-
+  Stm cluster height resizer (stm-cluster-heightzer) is a
+  python class that finds peaks of clusters (high bumps) in
+  a scanning tunneling microscope (STM) image(data).
+keywords:
+  - pythonon
+  - 'cluster '
+  - image-processing
+  - 'stm '
+  - 'atomic-force-microscopy '
+  - 'scanning-tunnelling-microscopy '
+  - 'scanning-tunelling-microscope '
+  - heights-correction
+  - ' metal-clusters'
+license: MIT
