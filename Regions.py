@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import numpy as np 
-from richdem import rdarray, TerrainAttribute
+#from richdem import rdarray, TerrainAttribute
 import sys
 from io import StringIO 
 import copy
@@ -33,12 +33,12 @@ class Capturing(list):
 
 @dataclass
 class region():
-    region_id: int = None
-    region_type: str = ''
-    coordinates : list[np.ndarray] = field(default_factory = list)
-    cluster_peak_coordinates : np.ndarray =np.empty(0)
-    ground_level : np.ndarray =np.empty(0)
-    ground_level_regions : list[np.ndarray] = field(default_factory = list)
+    region_id: int = field(default_factory=int)
+    region_type: str = field(default_factory=str)
+    coordinates : list = field(default_factory = list)
+    cluster_peak_coordinates : list = field(default_factory = list) # np.ndarray =np.empty(0)
+    ground_level : list = field(default_factory = list)#np.ndarray =np.empty(0)
+    ground_level_regions : list = field(default_factory = list)
     true_hight : float = None
     true_hight_closest_ground_level : float = None
     true_hight_heighest_ground_level : float = None

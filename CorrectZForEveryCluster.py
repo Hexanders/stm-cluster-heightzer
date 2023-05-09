@@ -1,4 +1,4 @@
-from Regions import *
+from .Regions import *
 from  gwyfile import load as gwyload
 from  gwyfile.util import get_datafields 
 import pickle
@@ -432,6 +432,7 @@ class clusterpic():
     
     def calc_cluster_distribution(self):
         """
+        (new)
         Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
         
         Returns:
@@ -442,8 +443,11 @@ class clusterpic():
         # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
         #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
                                                
-        all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
-                              self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
+        # all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
+        #                       self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
+
+        all_coord = np.array((self.clusters_coord[:,0]*(self.xreal/self.xres),
+                              self.clusters_coord[:,1]*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
 
         distribution = []
         for i in range(0, len(all_coord)):
