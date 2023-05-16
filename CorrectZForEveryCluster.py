@@ -255,15 +255,21 @@ class clusterpic():
         self.peak_XYdata = peak_data
         
     def show_data(self,
+                  ax =None,
                   cmap = 'gray',
                   bar = True,
                   bar_space_left = 0.05, # space in % from hole range
-                  bar_space_bottom = 0.05,# space in % from hole range
-                  bar_length = 100, # bar length in nm
+                  bar_space_bottom = 0.95,# space in % from hole range
+                  bar_length = None, # if non will be calculatet automaticaly 10% of picture width
                   bar_color = 'white',
                   bar_size = 10,
+                  bar_label_xshift = 1.5,   # in percent from origin
+                  bar_label_yshift = 0.99,  # in percent from origin
                   unit = 'nm',
-                  no_ticks =False
+                  no_ticks =False,
+                  show_clusters = False,
+                  clusters_markersize = 3,
+                  font_size= 10,
                   ):
         """
     Plots the scanning tunneling microscope (STM) data.
@@ -278,14 +284,14 @@ class clusterpic():
         The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
     bar_space_bottom: float
         The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
-    r_length: float
+    bar_length: float
         The length of the bar in nanometers. Default is 100.
     bar_color: str
         The color of the bar. Default is 'white'.
     bar_size: float
         The width of the bar in points. Default is 10.
     unit: str
-        The unit for the axis labels. Default is 'nm'.
+        The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
     no_ticks: bool
         Whether to show axis ticks or not. Default is False.
 
@@ -295,8 +301,30 @@ class clusterpic():
         The figure and axis objects of the plot.
     """
         from matplotlib import ticker as mpl_ticker
-        fig, ax = plt.subplots()
-        plt.imshow(self.data, cmap = cmap, extent =[0, self.xreal, 0, self.yreal])
+        if not ax:
+            fig, ax = plt.subplots()
+        plt.rcParams.update({'font.size': font_size})
+        multiplayer = 1
+        if not bar_length:
+            match unit:
+                case '$\AA$':
+                    multiplayer = 1e10
+                case 'nm':
+                    multiplayer = 1e9
+                case '$\mu$m':
+                    multiplayer = 1e6
+                    
+            bar_length = round(self.xreal*0.1*multiplayer)
+        plt.imshow(self.data,
+                   cmap = cmap,
+                   #origin = 'lower',
+                   extent =[0, self.xreal, self.yreal, 0]
+                   )
+        if show_clusters:
+            for i in range(0,len(self.clusters_coord)):
+                ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres),
+                    self.clusters_coord[:,1][i]*(self.yreal/self.yres),
+                        'o', c = 'r', ms = clusters_markersize)
         if bar:
             plt.hlines(self.yreal*bar_space_bottom,
                        #1E-8,
@@ -305,14 +333,15 @@ class clusterpic():
                        colors = bar_color)
     
             plt.annotate(str(bar_length)+' '+unit,
-                    (self.xreal*bar_space_left*1.5,self.yreal*bar_space_bottom*1.2),
+                    (self.xreal*bar_space_left*bar_label_xshift,self.yreal*bar_space_bottom*bar_label_yshift),
                              
                              color = bar_color)
-        multiplyer = 1
         if unit == 'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
-        if unit == 'mum':
+        if unit == '$\mu$m':
             func = lambda x,pos: "{:g}".format(x*1e6)
+        if unit == '$\AA$':
+            func = lambda x,pos: "{:g}".format(x*1e10)
         
         
         fmt = mpl_ticker.FuncFormatter(func)
@@ -329,14 +358,10 @@ class clusterpic():
             ax.set_xticks([])
             ax.set_yticks([])
         plt.tight_layout()
-        plt.subplots_adjust(# left=0.1,
-                    # bottom=0.1,
-                    # right=0.9,
-                    # top=0.9,
-                    wspace=0.01,
-                    #hspace=0.4
-        )
-        return (fig,ax)
+        plt.subplots_adjust(wspace=0.01)
+        
+            
+        return ax
     
     def get_peakXYdata(self):
         """
