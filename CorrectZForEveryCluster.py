@@ -253,10 +253,91 @@ class clusterpic():
             peak_data = df_column.combine_first(df_rows)
 
         self.peak_XYdata = peak_data
-    def show_data(self):
-        fig, ax = plt.subplots()
-        ax.imshow(self.data, extent =[0, self.xreal, 0, self.yreal])
         
+    def show_data(self,
+                  cmap = 'gray',
+                  bar = True,
+                  bar_space_left = 0.05, # space in % from hole range
+                  bar_space_bottom = 0.05,# space in % from hole range
+                  bar_length = 100, # bar length in nm
+                  bar_color = 'white',
+                  bar_size = 10,
+                  unit = 'nm',
+                  no_ticks =False
+                  ):
+        """
+    Plots the scanning tunneling microscope (STM) data.
+
+    Parameters:
+    -----------
+    cmap: str
+        The colormap used for the plot. Default is 'gray'.
+    bar: bool
+        Whether to show a bar on the plot or not. Default is True.
+    bar_space_left: float
+        The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
+    bar_space_bottom: float
+        The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
+    r_length: float
+        The length of the bar in nanometers. Default is 100.
+    bar_color: str
+        The color of the bar. Default is 'white'.
+    bar_size: float
+        The width of the bar in points. Default is 10.
+    unit: str
+        The unit for the axis labels. Default is 'nm'.
+    no_ticks: bool
+        Whether to show axis ticks or not. Default is False.
+
+    Returns:
+    --------
+    fig, ax: tuple
+        The figure and axis objects of the plot.
+    """
+        from matplotlib import ticker as mpl_ticker
+        fig, ax = plt.subplots()
+        plt.imshow(self.data, cmap = cmap, extent =[0, self.xreal, 0, self.yreal])
+        if bar:
+            plt.hlines(self.yreal*bar_space_bottom,
+                       #1E-8,
+                       xmin= self.xreal*bar_space_left,
+                       xmax = self.xreal*bar_space_left + bar_length*1e-9,
+                       colors = bar_color)
+    
+            plt.annotate(str(bar_length)+' '+unit,
+                    (self.xreal*bar_space_left*1.5,self.yreal*bar_space_bottom*1.2),
+                             
+                             color = bar_color)
+        multiplyer = 1
+        if unit == 'nm':
+            func = lambda x,pos: "{:g}".format(x*1e9)
+        if unit == 'mum':
+            func = lambda x,pos: "{:g}".format(x*1e6)
+        
+        
+        fmt = mpl_ticker.FuncFormatter(func)
+
+
+        ax0 = plt.colorbar(format = fmt, pad = 0.01)
+        ax0.ax.set_title(unit)
+        if no_ticks:
+            # Hide X and Y axes label marks
+            ax.xaxis.set_tick_params(labelbottom=False)
+            ax.yaxis.set_tick_params(labelleft=False)
+
+            # Hide X and Y axes tick marks
+            ax.set_xticks([])
+            ax.set_yticks([])
+        plt.tight_layout()
+        plt.subplots_adjust(# left=0.1,
+                    # bottom=0.1,
+                    # right=0.9,
+                    # top=0.9,
+                    wspace=0.01,
+                    #hspace=0.4
+        )
+        return (fig,ax)
+    
     def get_peakXYdata(self):
         """
         Calculates 2d numpy array of XY data of peaks estimatet by finde_peaks_in_rows().
@@ -432,7 +513,6 @@ class clusterpic():
     
     def calc_cluster_distribution(self):
         """
-        (new)
         Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
         
         Returns:
