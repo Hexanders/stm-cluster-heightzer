@@ -4,7 +4,7 @@ from  gwyfile.util import get_datafields
 import pickle
 import pandas as pd
 from scipy.signal import find_peaks
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.spatial import Voronoi, voronoi_plot_2d, cKDTree
 from matplotlib import path ### just for "drawing" an polygon for later extraction of the values inside this polygon
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -265,6 +265,7 @@ class clusterpic():
                   bar_size = 10,
                   bar_label_xshift = 1.5,   # in percent from origin
                   bar_label_yshift = 0.99,  # in percent from origin
+                  bar_ticks = False,
                   unit = 'nm',
                   no_ticks =False,
                   show_clusters = False,
@@ -315,7 +316,7 @@ class clusterpic():
                     multiplayer = 1e6
                     
             bar_length = round(self.xreal*0.1*multiplayer)
-        plt.imshow(self.data,
+        im = ax.imshow(self.data,
                    cmap = cmap,
                    #origin = 'lower',
                    extent =[0, self.xreal, self.yreal, 0]
@@ -326,13 +327,14 @@ class clusterpic():
                     self.clusters_coord[:,1][i]*(self.yreal/self.yres),
                         'o', c = 'r', ms = clusters_markersize)
         if bar:
-            plt.hlines(self.yreal*bar_space_bottom,
+            ax.hlines(self.yreal*bar_space_bottom,
                        #1E-8,
                        xmin= self.xreal*bar_space_left,
                        xmax = self.xreal*bar_space_left + bar_length*1e-9,
-                       colors = bar_color)
+                       colors = bar_color,
+                       linewidth = bar_size)
     
-            plt.annotate(str(bar_length)+' '+unit,
+            ax.annotate(str(bar_length)+' '+unit,
                     (self.xreal*bar_space_left*bar_label_xshift,self.yreal*bar_space_bottom*bar_label_yshift),
                              
                              color = bar_color)
@@ -346,9 +348,24 @@ class clusterpic():
         
         fmt = mpl_ticker.FuncFormatter(func)
 
-
-        ax0 = plt.colorbar(format = fmt, pad = 0.01)
-        ax0.ax.set_title(unit)
+        # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+        # axins = inset_axes(ax,
+        #             width="1%",  
+        #             height="100%",
+        #             bbox_to_anchor=(1,0.5),
+        #             # loc='lower center',
+        #             #borderpad=-5
+        #            )
+        cbar = plt.colorbar(im,
+                            #cax=axins,
+                            format = fmt,
+                            pad = 0.01)
+        
+        cbar.ax.set_title(unit,
+                          loc= 'right',
+                          pad = 0)
+        #cbar.ax.set_ylabel(unit)
+        if bar_ticks == False: cbar.ax.tick_params(size = 0, pad =0.3)
         if no_ticks:
             # Hide X and Y axes label marks
             ax.xaxis.set_tick_params(labelbottom=False)
@@ -357,8 +374,8 @@ class clusterpic():
             # Hide X and Y axes tick marks
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.tight_layout()
-        plt.subplots_adjust(wspace=0.01)
+        #plt.tight_layout()
+        #plt.subplots_adjust(wspace=0.01)
         
             
         return ax
@@ -535,7 +552,9 @@ class clusterpic():
             new_regions.append(new_region.tolist())
 
         return new_regions, np.asarray(new_vertices)
-    
+    def get_xy_coord(self):
+        return  np.array((self.clusters_coord[:,0]*(self.xreal/self.xres),
+                              self.clusters_coord[:,1]*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
     def calc_cluster_distribution(self):
         """
         Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
@@ -561,6 +580,34 @@ class clusterpic():
                     distribution.append(np.sqrt( (all_coord[k][0] - all_coord[i][0])**2. 
                                             + ( all_coord[k][1]  - all_coord[i][1])**2. ))
         self.cluster_distribution = np.array(distribution)
+        
+    def calc_nn_distribution(self):
+        """
+        Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
+        
+        Returns:
+        --------
+            numpy.array:
+                distace of every pare of all clusters
+        """
+        # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
+        #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
+                                               
+        # all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
+        #                       self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
+
+        all_coord = np.array((self.clusters_coord[:,0]*(self.xreal/self.xres),
+                              self.clusters_coord[:,1]*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
+
+        distribution = []
+        for i in range(0, len(all_coord)):
+            tmp_nn_distribution = []
+            for k in range(0, len(all_coord)):
+                if k!=i:
+                    tmp_nn_distribution.append(np.sqrt( (all_coord[k][0] - all_coord[i][0])**2. 
+                                            + ( all_coord[k][1]  - all_coord[i][1])**2. ))
+            distribution.append(min(tmp_nn_distribution))
+        self.nn_distribution = np.array(distribution)
         
     def cut_image_regions(self, window = None):
         """

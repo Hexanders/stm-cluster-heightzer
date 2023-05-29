@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import numpy as np 
-#from richdem import rdarray, TerrainAttribute
+from richdem import rdarray, TerrainAttribute
 import sys
 from io import StringIO 
 import copy
