@@ -387,6 +387,52 @@ class clusterpic():
         """
         return self.peak_XYdata
     
+    def finde_nn_in_r(self, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
+    """
+    Finds the nearest neighbors within a given distance for each coordinate in `coord`.
+
+    Parameters:
+    -----------
+    dr: float, optional
+        The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
+
+    Returns:
+    --------
+    result: dict
+        A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
+    """
+    coord = self.get_xy_coord()
+    tree = cKDTree(coord)
+    l = []
+    for i in coord:
+        nn = tree.query_ball_point(i, r = dr)#, return_length = True)
+        if nn:
+            tmp_count = 0
+            for k in nn: 
+                if (coord[k] == i).all(): #skip counting current cluster as neighbor
+                    pass
+                else:
+                    tmp_count +=1 
+            #print(tmp_count)
+            l.append(tmp_count)
+    nn_compl = np.arange(1,max(l)+1)
+    count = []
+    for p in nn_compl:
+        counter = 0
+        for s in l:
+            if s == p:
+                counter +=1 
+        count.append(counter)
+    #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
+    #return(pd.DataFrame((nn_compl,np.array(count)))
+    result = {}
+    if count_solo_cluster:
+        solo_clusters = len(coord) - np.array(count).sum()
+        result[0] = solo_clusters
+    for i,k in zip (nn_compl,count):
+        result[i] = k
+    return result
+
     def show_peakXYdata(self, figsize = (10,10) , cmap = None, returnImag = False):
         """
         Plots image of all peaks estimatet by find_peaks_in_rows() (plt.imshow())
