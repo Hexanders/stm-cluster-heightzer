@@ -34,7 +34,6 @@ def finde_nn_in_r(coord, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = Fal
         result: dict
             A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
         """
-        #coord = self.get_xy_coord()
         tree = cKDTree(coord)
         l = []
         for i in coord:
@@ -46,12 +45,10 @@ def finde_nn_in_r(coord, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = Fal
                         pass
                     else:
                         tmp_count +=1 
-                #print(tmp_count)
                 l.append(tmp_count)
             else:
                 print('No tree was created!')
         nn_compl = np.arange(1,max(l)+1)
-        #print(nn)
         count = []
         for p in nn_compl:
             counter = 0
@@ -59,8 +56,6 @@ def finde_nn_in_r(coord, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = Fal
                 if s == p:
                     counter +=1 
             count.append(counter)
-        #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
-        #return(pd.DataFrame((nn_compl,np.array(count)))
         result = {}
         if count_solo_cluster:
             solo_clusters = len(coord) - np.array(count).sum()
@@ -84,7 +79,6 @@ class clusterpic():
         si_unit_z: unitis of z e.g m or nm
  
     """
-    #import numpy as np
     def __init__(self, path = '', name ='', data = None , xres = None, yres= None ,
                  xreal = None, yreal= None, si_unit_xy= None, si_unit_z= None):
         self.path = path,
@@ -115,7 +109,6 @@ class clusterpic():
         self.coor_regieons = []
         self.regions = []
         
-        # self.tmp = [] # for debuging
         self.heights = pd.DataFrame(columns = ['x',
                                                'y',
                                                f'x_{self.si_unit_xy}',
@@ -236,7 +229,6 @@ class clusterpic():
             aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
             maxX, maxY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
             maxXX, maxYY = maxX+x_range[0], maxY+y_range[0] ## correct for the actual array, so not the slice
-            #self.tmp.append([aslice.max() ,suspect])
             if np.isnan(suspect[2]): ### some times it is just nan, no idea why. This is not very good fix but it works
                 suspect[2] = 0.0
             if aslice.max() > suspect[2]:
@@ -402,25 +394,6 @@ class clusterpic():
         
         fmt = mpl_ticker.FuncFormatter(func)
 
-        # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-        # axins = inset_axes(ax,
-        #             width="1%",  
-        #             height="100%",
-        #             bbox_to_anchor=(1,0.5),
-        #             # loc='lower center',
-        #             #borderpad=-5
-        #            )
-        #cbar_fraction, cba_pad = 0.04740, 0.004
-         # cbar = plt.colorbar(im,
-        #                     #cax=axins,
-        #                     format = fmt,
-        #                     pad = 0.01)
-        
-        # cbar.ax.set_title(unit,
-        #                   loc= 'right',
-        #                   pad = 0)
-        #cbar.ax.set_ylabel(unit)
-        #if bar_ticks == False: cbar.ax.tick_params(size = 0, pad =0.3)
         if no_ticks:
             # Hide X and Y axes label marks
             ax.xaxis.set_tick_params(labelbottom=False)
@@ -429,8 +402,6 @@ class clusterpic():
             # Hide X and Y axes tick marks
             ax.set_xticks([])
             ax.set_yticks([])
-        #plt.tight_layout()
-        #plt.subplots_adjust(wspace=0.01)
         cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad)
         tick_locator = ticker.MaxNLocator(nbins=9)
         cbar.locator = tick_locator
@@ -471,7 +442,6 @@ class clusterpic():
         result: dict
             A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
         """
-        #coord = self.get_xy_coord()
         tree = cKDTree(coord)
         l = []
         for i in coord:
@@ -483,12 +453,10 @@ class clusterpic():
                         pass
                     else:
                         tmp_count +=1 
-                #print(tmp_count)
                 l.append(tmp_count)
             else:
                 print('No tree was created!')
         nn_compl = np.arange(1,max(l)+1)
-        #print(nn)
         count = []
         for p in nn_compl:
             counter = 0
@@ -496,8 +464,6 @@ class clusterpic():
                 if s == p:
                     counter +=1 
             count.append(counter)
-        #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
-        #return(pd.DataFrame((nn_compl,np.array(count)))
         result = {}
         if count_solo_cluster:
             solo_clusters = len(coord) - np.array(count).sum()
@@ -683,12 +649,7 @@ class clusterpic():
             numpy.array:
                 distace of every pare of all clusters
         """
-        # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
-        #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
-                                               
-        # all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
-        #                       self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
-
+ 
         all_coord = np.array((self.clusters_coord[:,0]*(self.xreal/self.xres),
                               self.clusters_coord[:,1]*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
 
@@ -709,12 +670,7 @@ class clusterpic():
             numpy.array:
                 distace of every pare of all clusters
         """
-        # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
-        #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
-                                               
-        # all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
-        #                       self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
-
+ 
         all_coord = np.array((self.clusters_coord[:,0]*(self.xreal/self.xres),
                               self.clusters_coord[:,1]*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
 
@@ -749,19 +705,13 @@ class clusterpic():
                 if x_range[0] < 0 : x_range[0] = 0  # if you hit the boundaries
                 if x_range[1] > self.data.shape[1] : x_range[1] = self.data.shape[1] # if you hit the boundaries
   
-                #print(x_range, y_range)
                 aslice = self.data[y_range[0]:y_range[1],x_range[0]:x_range[1]]
-                #maxX, maxY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
-                #maxXX, maxYY = maxX+x_range[0], maxY+y_range[0] ## correct for the actual array, so not the slice
-                #[maxYY, maxXX, aslice.max() ]
                 slice_xyz = []
                 for y in range(aslice.shape[0]):
                     for x in range(aslice.shape[1]):           
                         slice_xyz.append([x+x_range[0],
                                           y+y_range[0],
                                           aslice[y][x]])  
-                #self.coor_regieons.update({idx:{'x_min_id_offset':x_range[0], 'y_min_id_offset':y_range[0],'slice':aslice,'xyz(max)':i}})
-                #self.coor_regieons.append([np.array(slice_xyz),i])
                 a_region = region()
                 a_region.region_id = idx
                 a_region.coordinates = np.array(slice_xyz)
@@ -778,9 +728,7 @@ class clusterpic():
             xyz_data = []
             for iy, ix in np.ndindex(self.data.shape): ###Reshaping NxN array int too 3XN .shoulb be vectorized!!!! 
                 xyz_data.append([ix,iy,self.data[ix,iy]])
-            #[xyz_data.append([ix,iy,data[ix,iy]]) for iy, ix in np.ndindex(data.shape)] ### slower!!
             xyz_data = np.array(xyz_data)
-            #start_time = time.time()
             xy_data = np.array([xyz_data[:,1],xyz_data[:,0]]).T ### reduce from 3XN to 2XN needed for matplotlib.path.path.contains_points
             for idx,i in enumerate(regions): ##### Very Very slow need vectorization!!!!!!
                 polygon_coord = path.Path(vertices[i]) ### extracting coordinates out of polygon
@@ -789,14 +737,12 @@ class clusterpic():
                 dict_a3d_area = {}
                 for i in a3d_area:
                      dict_a3d_area[(i[0],i[1])] = i[2]
-              #  [(dict_a3d_area[(i[0],i[1])] = i[2]) for i in a3d_area]
                 breakIt = False
                 cluster_max_inthearea = None
                 for k in self.clusters_coord:
                     if breakIt:
                         break
                     if (k[1],k[0]) in dict_a3d_area:
-                        # cluster_max_inthearea =(i[0],i[1],dict_a3d_area[(i[0],i[1])])
                         cluster_max_inthearea =(k[1],k[0],k[2])
                         breakIt = True
                         break
@@ -806,7 +752,6 @@ class clusterpic():
                 a_region.cluster_peak_coordinates = np.array(cluster_max_inthearea)
                 a_region.region_type = region_type
                 self.regions.append(a_region) 
-                #self.coor_regieons.update({idx:{'x_min_id_offset':x_range[0], 'y_min_id_offset':y_range[0],'slice':aslice,'xyz(max)':cluster_max_inthearea}})
                 
    
     
@@ -995,9 +940,7 @@ class clusterpic():
                 plt.draw()
         self.cid = fig.canvas.mpl_connect('button_press_event',lambda event: onclick(event,pickable_artists,self.data))
 
-        # ax.set_xlim(vor.min_bound[0] - 10, vor.max_bound[0] + 10)
-        # ax.set_ylim(vor.min_bound[1] - 10, vor.max_bound[1] + 10)
-
+ 
         ax.set_xlim(0, self.data.shape[1])
         ax.set_ylim(0, self.data.shape[0])
 
@@ -1018,7 +961,6 @@ class clusterpic():
         true_height = region.true_hight
         true_height_closest= region.true_hight_closest_ground_level
         true_height_heighest= region.true_hight_heighest_ground_level
-        # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
         self.heights.loc[index] = [x,y,x_m,y_m,z, true_height, true_height_closest,true_height_heighest]
     def show_regions(self, 
                      figsize =(10,10), 
@@ -1042,11 +984,9 @@ class clusterpic():
         fig = plt.axes()
         fig.imshow(self.data)
         for i in self.coor_regieons:
-            #plt.scatter(i[0][:,0],i[0][:,1], color = 'red', alpha=0.5)
             x_min , x_max, y_min, y_max =min(i[0][:,0]), max(i[0][:,0]), min(i[0][:,1]), max(i[0][:,1])
             rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=face_color,ec=rim_color, alpha = alpha)
             fig.add_patch(rectangle)
-            # break
         
         
     def plot_heights_distribution(self,
@@ -1076,14 +1016,6 @@ class clusterpic():
         )
 
         
-#         binning = plt.hist(self.heights['corrected_Z_averaged'], bins=bins,
-#                         density=False)
-        
-#         binning2 = plt.hist(self.heights['corrected_Z_closest_step'], bins=bins,
-#                         density=False)
-        
-#         binning3 = plt.hist(self.heights['corrected_Z_highest_step'], bins=bins,
-#                         density=False)
         binning = np.histogram(self.heights['corrected_Z_averaged'], bins=bins,
                         density=False)
         
@@ -1251,7 +1183,6 @@ class clusterpic():
         fig['layout']['yaxis2']['title']='Initial_Z - Corrected_Z '
         fig['layout']['yaxis2']['tickformat']= 'E'
         fig['layout']['xaxis2']['tickformat']= 'E'
-        #fig['layout']['yaxis2']['rangemode']= 'tozero'
         
         fig['layout']['yaxis3']['title']='Density distribution'
         fig['layout']['xaxis3']['title']=f'Z [{self.si_unit_z}]'
@@ -1276,19 +1207,6 @@ def load_from_gwyddion(path : str) -> clusterpic:
     channels = get_datafields(obj)
     objreturn ={}
     for i in channels.keys():
-        #print(channels[i])
-        # objreturn.append(
-        #     clusterpic(
-        #             path = path,
-        #             name = i,
-        #             data = channels[i].data,
-        #             xres = channels[i]['xres'],
-        #             yres = channels[i]['yres'],
-        #             xreal = channels[i]['xreal'],
-        #             yreal = channels[i]['yreal'],
-        #             si_unit_xy = channels[i]['si_unit_xy'],
-        #             si_unit_z = channels[i]['si_unit_z']
-        #         ))
        
         objreturn[i] =  clusterpic(
                     path = path,
@@ -1331,12 +1249,10 @@ def del_edge_clusters_by_pix(toProzess: clusterpic, deltPix: int = 0 ):
     indexes_to_delet = []            
     for index, row in toProzess.heights.iterrows():
         if (row['x'] >= toProzess.xres-deltPix) or  (row['y'] >= toProzess.yres-deltPix): 
-            #print(index,row['x'], row['y'])
             indexes_to_delet.append(index)
             toProzess_t.pop(index)
 
         if (row['x'] <= 0 + deltPix) or  (row['y'] <= 0 + deltPix): 
-            #print(index,row['x'], row['y'])
             toProzess_t.pop(index)
             indexes_to_delet.append(index)
 
@@ -1358,7 +1274,6 @@ def combine_heights(name:str = '', input_path: str = '', input_list: list = None
             current_obj = load_from_pickle(input_path+i)
             result_dfs.append(current_obj.heights)
             result_area += current_obj.area
-            #print(result_area)
     result = pd.concat(result_dfs)
     blup = clusterpic(data = np.zeros((10,10)), name=name)
     blup.si_unit_xy = 'm'
