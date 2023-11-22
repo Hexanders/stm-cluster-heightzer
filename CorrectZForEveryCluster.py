@@ -8,7 +8,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d, cKDTree
 from matplotlib import path ### just for "drawing" an polygon for later extraction of the values inside this polygon
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import cm
+from matplotlib import cm, ticker
 import multiprocessing 
 from sklearn.neighbors import KernelDensity
 import time
@@ -19,7 +19,55 @@ import traceback
 import logging
 import beepy
 from os import listdir
+def finde_nn_in_r(coord, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
+        """
+        Finds the nearest neighbors within a given distance for each coordinate in `coord`.
 
+        Parameters:
+        -----------
+        coord: list of coordinates of cluster
+        dr: float, optional
+            The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
+
+        Returns:
+        --------
+        result: dict
+            A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
+        """
+        #coord = self.get_xy_coord()
+        tree = cKDTree(coord)
+        l = []
+        for i in coord:
+            nn = tree.query_ball_point(i, r = dr)#, return_length = True)
+            if nn:
+                tmp_count = 0
+                for k in nn: 
+                    if (coord[k] == i).all(): #skip counting current cluster as neighbor
+                        pass
+                    else:
+                        tmp_count +=1 
+                #print(tmp_count)
+                l.append(tmp_count)
+            else:
+                print('No tree was created!')
+        nn_compl = np.arange(1,max(l)+1)
+        #print(nn)
+        count = []
+        for p in nn_compl:
+            counter = 0
+            for s in l:
+                if s == p:
+                    counter +=1 
+            count.append(counter)
+        #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
+        #return(pd.DataFrame((nn_compl,np.array(count)))
+        result = {}
+        if count_solo_cluster:
+            solo_clusters = len(coord) - np.array(count).sum()
+            result[0] = solo_clusters
+        for i,k in zip (nn_compl,count):
+            result[i] = k
+        return result
 class clusterpic():
     """
     Creats an Object for working on STM data. 
@@ -257,6 +305,9 @@ class clusterpic():
     def show_data(self,
                   ax =None,
                   cmap = 'gray',
+                  data_multiplayer = 1,
+                  cbar_fraction = 0.04740,
+                  cbar_pad =  0.004,
                   bar = True,
                   bar_space_left = 0.05, # space in % from hole range
                   bar_space_bottom = 0.95,# space in % from hole range
@@ -279,6 +330,7 @@ class clusterpic():
     -----------
     cmap: str
         The colormap used for the plot. Default is 'gray'.
+    
     bar: bool
         Whether to show a bar on the plot or not. Default is True.
     bar_space_left: float
@@ -316,7 +368,7 @@ class clusterpic():
                     multiplayer = 1e6
                     
             bar_length = round(self.xreal*0.1*multiplayer)
-        im = ax.imshow(self.data,
+        im = ax.imshow(self.data*data_multiplayer,
                    cmap = cmap,
                    #origin = 'lower',
                    extent =[0, self.xreal, self.yreal, 0]
@@ -326,6 +378,7 @@ class clusterpic():
                 ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres),
                     self.clusters_coord[:,1][i]*(self.yreal/self.yres),
                         'o', c = 'r', ms = clusters_markersize)
+            
         if bar:
             ax.hlines(self.yreal*bar_space_bottom,
                        #1E-8,
@@ -338,6 +391,7 @@ class clusterpic():
                     (self.xreal*bar_space_left*bar_label_xshift,self.yreal*bar_space_bottom*bar_label_yshift),
                              
                              color = bar_color)
+        
         if unit == 'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
         if unit == '$\mu$m':
@@ -356,16 +410,17 @@ class clusterpic():
         #             # loc='lower center',
         #             #borderpad=-5
         #            )
-        cbar = plt.colorbar(im,
-                            #cax=axins,
-                            format = fmt,
-                            pad = 0.01)
+        #cbar_fraction, cba_pad = 0.04740, 0.004
+         # cbar = plt.colorbar(im,
+        #                     #cax=axins,
+        #                     format = fmt,
+        #                     pad = 0.01)
         
-        cbar.ax.set_title(unit,
-                          loc= 'right',
-                          pad = 0)
+        # cbar.ax.set_title(unit,
+        #                   loc= 'right',
+        #                   pad = 0)
         #cbar.ax.set_ylabel(unit)
-        if bar_ticks == False: cbar.ax.tick_params(size = 0, pad =0.3)
+        #if bar_ticks == False: cbar.ax.tick_params(size = 0, pad =0.3)
         if no_ticks:
             # Hide X and Y axes label marks
             ax.xaxis.set_tick_params(labelbottom=False)
@@ -376,7 +431,19 @@ class clusterpic():
             ax.set_yticks([])
         #plt.tight_layout()
         #plt.subplots_adjust(wspace=0.01)
+        cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad)
+        tick_locator = ticker.MaxNLocator(nbins=9)
+        cbar.locator = tick_locator
+        cbar.ax.tick_params(direction = 'out')
+        cbar.update_ticks()
+        cbar.ax.set_xticks(cbar.ax.get_xticks()) ## strainge avoding of error
+        cbar.ax.set_yticks(cbar.ax.get_yticks())
+        ticklabs = cbar.ax.get_yticklabels()
+        cbar.ax.set_yticklabels(ticklabs, fontsize=3)
         
+        
+        cbar.ax.set_title(r'\si{\nano\meter}', fontsize = 1, pad = 1)
+       
             
         return ax
     
@@ -386,52 +453,58 @@ class clusterpic():
             it is just the heigest points not the maxima of cluster, you need to run group_clusters() for this
         """
         return self.peak_XYdata
-    
-    def finde_nn_in_r(self, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
-    """
-    Finds the nearest neighbors within a given distance for each coordinate in `coord`.
 
-    Parameters:
-    -----------
-    dr: float, optional
-        The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
+    @staticmethod
+    def finde_nn_in_r(coord , dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
+        """
+        Finds the nearest neighbors within a given distance for each coordinate in `coord`.
 
-    Returns:
-    --------
-    result: dict
-        A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
-    """
-    coord = self.get_xy_coord()
-    tree = cKDTree(coord)
-    l = []
-    for i in coord:
-        nn = tree.query_ball_point(i, r = dr)#, return_length = True)
-        if nn:
-            tmp_count = 0
-            for k in nn: 
-                if (coord[k] == i).all(): #skip counting current cluster as neighbor
-                    pass
-                else:
-                    tmp_count +=1 
-            #print(tmp_count)
-            l.append(tmp_count)
-    nn_compl = np.arange(1,max(l)+1)
-    count = []
-    for p in nn_compl:
-        counter = 0
-        for s in l:
-            if s == p:
-                counter +=1 
-        count.append(counter)
-    #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
-    #return(pd.DataFrame((nn_compl,np.array(count)))
-    result = {}
-    if count_solo_cluster:
-        solo_clusters = len(coord) - np.array(count).sum()
-        result[0] = solo_clusters
-    for i,k in zip (nn_compl,count):
-        result[i] = k
-    return result
+        Parameters:
+        -----------
+        coord: list
+              list of coordinates of clusters (see self.get_xy_coord())
+        dr: float, optional
+            The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
+
+        Returns:
+        --------
+        result: dict
+            A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
+        """
+        #coord = self.get_xy_coord()
+        tree = cKDTree(coord)
+        l = []
+        for i in coord:
+            nn = tree.query_ball_point(i, r = dr)#, return_length = True)
+            if nn:
+                tmp_count = 0
+                for k in nn: 
+                    if (coord[k] == i).all(): #skip counting current cluster as neighbor
+                        pass
+                    else:
+                        tmp_count +=1 
+                #print(tmp_count)
+                l.append(tmp_count)
+            else:
+                print('No tree was created!')
+        nn_compl = np.arange(1,max(l)+1)
+        #print(nn)
+        count = []
+        for p in nn_compl:
+            counter = 0
+            for s in l:
+                if s == p:
+                    counter +=1 
+            count.append(counter)
+        #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
+        #return(pd.DataFrame((nn_compl,np.array(count)))
+        result = {}
+        if count_solo_cluster:
+            solo_clusters = len(coord) - np.array(count).sum()
+            result[0] = solo_clusters
+        for i,k in zip (nn_compl,count):
+            result[i] = k
+        return result
 
     def show_peakXYdata(self, figsize = (10,10) , cmap = None, returnImag = False):
         """
@@ -1201,13 +1274,25 @@ def load_from_gwyddion(path : str) -> clusterpic:
     """
     obj = gwyload(path)
     channels = get_datafields(obj)
-    objreturn =[]
+    objreturn ={}
     for i in channels.keys():
         #print(channels[i])
-        objreturn.append(
-            clusterpic(
+        # objreturn.append(
+        #     clusterpic(
+        #             path = path,
+        #             name = i,
+        #             data = channels[i].data,
+        #             xres = channels[i]['xres'],
+        #             yres = channels[i]['yres'],
+        #             xreal = channels[i]['xreal'],
+        #             yreal = channels[i]['yreal'],
+        #             si_unit_xy = channels[i]['si_unit_xy'],
+        #             si_unit_z = channels[i]['si_unit_z']
+        #         ))
+       
+        objreturn[i] =  clusterpic(
                     path = path,
-                    name = i,
+                    name = f'{channels[i]["xres"]}x{channels[i]["yres"]} pix {channels[i]["xreal"]:.2e}x{channels[i]["yreal"]:.2e} m',
                     data = channels[i].data,
                     xres = channels[i]['xres'],
                     yres = channels[i]['yres'],
@@ -1215,7 +1300,8 @@ def load_from_gwyddion(path : str) -> clusterpic:
                     yreal = channels[i]['yreal'],
                     si_unit_xy = channels[i]['si_unit_xy'],
                     si_unit_z = channels[i]['si_unit_z']
-                ))
+                )
+        
     return objreturn
 
 def load_from_pickle(path : str) -> clusterpic:
