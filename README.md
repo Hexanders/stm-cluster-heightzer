@@ -76,7 +76,10 @@ ax, picable_artists = my_pic.cluster_peaker(show_regions= True, alpha = 0.4)
 The Voronoi pattern is more suitable when the clusters are close to each other and it is difficult to separate the clusters with rectangular windows. The Window pattern is probably the most common case and should be used preferably because otherwise the calculation time increases since the larger the windows the more points have to be calculated.
 
 
-After that the correction of the heights of each cluster can start, parralel_correct_height() method calculates and corrects the heights by calculating the slopes in each point with the help of richdem package (see https://richdem.readthedocs.io/en/latest/) and then decides what is ground level and what is peak. Here only this short explanation, the rest you can read in the docstring or ask me directly.
+After that the correction of the heights of each cluster can start, the method parralel_correct_height() calculates and corrects the heights by calculating the slopes in each point as described in [1. Horn, B. K. P. Hill shading and the reflectance map. Proc. IEEE 69, 14-47 (1981).
+] 
+The script decides what is ground level and what is a peak. 
+Here is only this short explanation, you can read the rest in the docstring.
 
 
 ```
