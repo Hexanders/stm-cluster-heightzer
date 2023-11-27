@@ -54,7 +54,7 @@ class region():
     
     
     
-    def find_groundlevel(self):
+    def find_groundlevel_old(self):
         """
         Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
 
@@ -99,7 +99,85 @@ class region():
                 break
         self.ground_level = ground_level
         return self
+    @staticmethod
+    def calculate_slope(array):
+        rows, cols = array.shape
+        slope_matrix = np.zeros_like(array, dtype=float)
+        # for i in range(1, rows - 1):
+        #     for j in range(1, cols - 1):
+        #         dz_dx = (array[i, j + 1] - array[i, j - 1]) / 2.0
+        #         dz_dy = (array[i + 1, j] - array[i - 1, j]) / 2.0
+
+        #         slope = np.sqrt(dz_dx**2 + dz_dy**2)
+        #         slope_matrix[i, j] = np.degrees(np.arctan(slope))
+        for i in range(2, rows - 2):
+            for j in range(2, cols - 2):
+                z_pp = array[i+1, j+1]
+                z_op = array[i+1, j]
+                z_mp = array[i+1, j-1]
+                z_po = array[i, j+1]
+                z_mo = array[i, j-1]
+                z_pm = array[i-1, j+1]
+                z_om = array[i-1, j]
+                z_mm = array[i-1, j-1]
+                
+                dz_dx = (( z_pp + 2. * z_po + z_pm ) - ( z_mp + 2 * z_mo + z_mm ))/8
+                dz_dy = (( z_pp + 2. * z_op + z_mp ) - ( z_pm + 2 * z_om + z_mm ))/8
+
+                slope = np.sqrt(dz_dx**2 + dz_dy**2)
+                slope_matrix[i, j] = np.degrees(np.arctan(slope))
         
+        slope_matrix = slope_matrix/slope_matrix.max() #normalize
+        return slope_matrix
+        
+    
+    def find_groundlevel(self):
+        """
+        Compute slope maps with richdem.TerrainAttribute and determine the ground level of the cluster for calculating of heights of the cluster due to this ground level  
+
+       Returns:
+            ground_level (list):
+                list of x,y,z, all points in cuted area of cluster wich are belonging to ground level
+        """
+        x_min =  self.coordinates[:,0].min() # region_data came from matplotlib.path and ist is not array, hier konvert to squer array with nan if no value. still empty array 
+        y_min =  self.coordinates[:,1].min()
+        z_min = self.coordinates[:,2].min()
+        x_dim = np.arange(self.coordinates[:,0].min(),self.coordinates[:,0].max()+1)
+        y_dim = np.arange(self.coordinates[:,1].min(),self.coordinates[:,1].max()+1)
+        full_dim_array = np.empty((len(x_dim),len(y_dim)))
+        full_dim_array[:] = np.NaN
+        for i in range(0,full_dim_array.shape[0]): # fill empty array with data
+            for j in range(0,full_dim_array.shape[1]):
+                xxx = np.where((self.coordinates[:,0] == i+x_min) & (self.coordinates[:,1] == j+y_min) )
+                if np.any(self.coordinates[xxx[0]]):
+                    full_dim_array[i][j] = self.coordinates[xxx[0]][0][2]
+                    # print(full_dim_array[i][j])
+                else:
+                    full_dim_array[i][j] = z_min
+        slope_data = region.calculate_slope(full_dim_array)
+        threshhold = np.nanmin(slope_data) + (np.nanmax(slope_data)-np.nanmin(slope_data))*self.slope_threshold_factor### x% of difference from max to min
+        flat_matrix = np.argwhere((slope_data<threshhold) & (slope_data.any()))
+
+        correct_flat_matrix = np.vstack((flat_matrix[:,0]+x_min, flat_matrix[:,1]+y_min)).T ### correct for the rigth coordinates due to the comleet picture
+        xyz_flat_matrix = []
+        #start_time = time.time()
+        for i in self.coordinates:
+            for k in correct_flat_matrix:
+                if (k[0] == i[0]) & (k[1] == i[1]):
+                    xyz_flat_matrix.append([i[0],i[1],i[2]])
+        xyz_flat_matrix = np.asarray(xyz_flat_matrix)
+
+        y_max,x_max,z_max = self.cluster_peak_coordinates
+        ground_level = np.array([])
+        while len(ground_level) <= 1:
+            ground_level = xyz_flat_matrix[np.where(xyz_flat_matrix[:,2]<(z_max-(z_max-xyz_flat_matrix[:,2].min())*self.groundlevel_cutoff))]
+            groundlevel_cutoff = self.groundlevel_cutoff - 0.01
+            if groundlevel_cutoff <= 0.90:
+                break
+        self.ground_level = ground_level
+        return self
+        #return xyz_flat_matrix
+    
     def calc_true_hight(self):
         """
             Correct the heights in z for specific reagion_data (witch were cuted by cut_image_regions)
@@ -273,9 +351,13 @@ class region():
                         marker = 'x', 
                         label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h_average:%s, h_closest: %s, h_heighest: %s' %
+        if (not self.cluster_peak_coordinates[2]) or (not self.true_hight) or (not self.true_hight_closest_ground_level) or (not self.true_hight_heighest_ground_level):
+            fig.suptitle(f'Region Nr: {self.region_id}')
+        else:
+            fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h_average:%s, h_closest: %s, h_heighest: %s' %
                                                                 ('{:0.3e}'.format(self.cluster_peak_coordinates[2]), 
                                                                  '{:0.3e}'.format(self.true_hight),
+                                                                 
                                                                 '{:0.3e}'.format(self.true_hight_closest_ground_level),
                                                                 '{:0.3e}'.format(self.true_hight_heighest_ground_level),
                                                                  

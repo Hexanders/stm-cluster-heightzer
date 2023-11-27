@@ -1,4 +1,4 @@
-from .Regions import *
+from Regions import *
 from  gwyfile import load as gwyload
 from  gwyfile.util import get_datafields 
 import pickle
@@ -273,34 +273,34 @@ class clusterpic():
                   font_size= 10,
                   ):
         """
-    Plots the scanning tunneling microscope (STM) data.
+        Plots the scanning tunneling microscope (STM) data.
 
-    Parameters:
-    -----------
-    cmap: str
-        The colormap used for the plot. Default is 'gray'.
-    bar: bool
-        Whether to show a bar on the plot or not. Default is True.
-    bar_space_left: float
-        The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
-    bar_space_bottom: float
-        The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
-    bar_length: float
-        The length of the bar in nanometers. Default is 100.
-    bar_color: str
-        The color of the bar. Default is 'white'.
-    bar_size: float
-        The width of the bar in points. Default is 10.
-    unit: str
-        The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
-    no_ticks: bool
-        Whether to show axis ticks or not. Default is False.
+        Parameters:
+        -----------
+        cmap: str
+            The colormap used for the plot. Default is 'gray'.
+        bar: bool
+            Whether to show a bar on the plot or not. Default is True.
+        bar_space_left: float
+            The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
+        bar_space_bottom: float
+            The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
+        bar_length: float
+            The length of the bar in nanometers. Default is 100.
+        bar_color: str
+            The color of the bar. Default is 'white'.
+        bar_size: float
+            The width of the bar in points. Default is 10.
+        unit: str
+            The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
+        no_ticks: bool
+            Whether to show axis ticks or not. Default is False.
 
-    Returns:
-    --------
-    fig, ax: tuple
+        Returns:
+        --------
+        fig, ax: tuple
         The figure and axis objects of the plot.
-    """
+        """
         from matplotlib import ticker as mpl_ticker
         if not ax:
             fig, ax = plt.subplots()
@@ -388,50 +388,50 @@ class clusterpic():
         return self.peak_XYdata
     
     def finde_nn_in_r(self, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
-    """
-    Finds the nearest neighbors within a given distance for each coordinate in `coord`.
+        """
+        Finds the nearest neighbors within a given distance for each coordinate in `coord`.
 
-    Parameters:
-    -----------
-    dr: float, optional
-        The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
-
-    Returns:
-    --------
-    result: dict
-        A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
-    """
-    coord = self.get_xy_coord()
-    tree = cKDTree(coord)
-    l = []
-    for i in coord:
-        nn = tree.query_ball_point(i, r = dr)#, return_length = True)
-        if nn:
-            tmp_count = 0
-            for k in nn: 
-                if (coord[k] == i).all(): #skip counting current cluster as neighbor
-                    pass
-                else:
-                    tmp_count +=1 
-            #print(tmp_count)
-            l.append(tmp_count)
-    nn_compl = np.arange(1,max(l)+1)
-    count = []
-    for p in nn_compl:
-        counter = 0
-        for s in l:
-            if s == p:
-                counter +=1 
-        count.append(counter)
-    #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
-    #return(pd.DataFrame((nn_compl,np.array(count)))
-    result = {}
-    if count_solo_cluster:
-        solo_clusters = len(coord) - np.array(count).sum()
-        result[0] = solo_clusters
-    for i,k in zip (nn_compl,count):
-        result[i] = k
-    return result
+        Parameters:
+        -----------
+        dr: float, optional
+            The distance threshold within which neighbors are considered. Default is the square root of 2 nanometers squared.
+        
+        Returns:
+        --------
+        result: dict
+            A dictionary where the keys are the number of nearest neighbors and the values are the count of points having that number of neighbors within the given distance.
+        """
+        coord = self.get_xy_coord()
+        tree = cKDTree(coord)
+        l = []
+        for i in coord:
+            nn = tree.query_ball_point(i, r = dr)#, return_length = True)
+            if nn:
+                tmp_count = 0
+                for k in nn: 
+                    if (coord[k] == i).all(): #skip counting current cluster as neighbor
+                        pass
+                    else:
+                        tmp_count +=1 
+                #print(tmp_count)
+                l.append(tmp_count)
+        nn_compl = np.arange(1,max(l)+1)
+        count = []
+        for p in nn_compl:
+            counter = 0
+            for s in l:
+                if s == p:
+                    counter +=1 
+            count.append(counter)
+        #return(pd.DataFrame(np.vstack((nn_compl,np.array(count)))))
+        #return(pd.DataFrame((nn_compl,np.array(count)))
+        result = {}
+        if count_solo_cluster:
+            solo_clusters = len(coord) - np.array(count).sum()
+            result[0] = solo_clusters
+        for i,k in zip (nn_compl,count):
+            result[i] = k
+        return result
 
     def show_peakXYdata(self, figsize = (10,10) , cmap = None, returnImag = False):
         """
