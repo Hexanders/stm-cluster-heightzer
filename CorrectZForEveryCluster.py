@@ -66,7 +66,6 @@ class clusterpic():
         self.event =None
         self.coor_regieons = []
         self.regions = []
-        
         # self.tmp = [] # for debuging
         self.heights = pd.DataFrame(columns = ['x',
                                                'y',
@@ -77,7 +76,8 @@ class clusterpic():
                                                'corrected_Z_closest_step',
                                               'corrected_Z_highest_step'])
         self.cluster_distribution = None
-        
+        self.slope_map = []
+   
         if (self.data.shape[0] == self.data.shape[1]) == False:
             #### correct cuted images to full dimetions, so it is simple to compute all other stuff
             xmeter_per_pix = self.xreal/self.xres
@@ -485,6 +485,7 @@ class clusterpic():
                 clusters_coord = np.delete(clusters_coord,list_for_deletion,axis=0)
         self.clusters_coord = clusters_coord
         
+        
     def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False):
         """
         Updates the list of clusters withch was peakt by cluster_peaker() or by given list xyz
@@ -654,7 +655,30 @@ class clusterpic():
                                             + ( all_coord[k][1]  - all_coord[i][1])**2. ))
             distribution.append(min(tmp_nn_distribution))
         self.nn_distribution = np.array(distribution)
-        
+    @staticmethod
+    def calculate_slope(array):
+        rows, cols = array.shape
+        slope_matrix = np.zeros_like(array, dtype=float)
+        for i in range(2, rows - 2):
+            for j in range(2, cols - 2):
+                z_pp = array[i+1, j+1]
+                z_op = array[i+1, j]
+                z_mp = array[i+1, j-1]
+                z_po = array[i, j+1]
+                z_mo = array[i, j-1]
+                z_pm = array[i-1, j+1]
+                z_om = array[i-1, j]
+                z_mm = array[i-1, j-1]
+                
+                dz_dx = (( z_pp + 2. * z_po + z_pm ) - ( z_mp + 2 * z_mo + z_mm ))/8
+                dz_dy = (( z_pp + 2. * z_op + z_mp ) - ( z_pm + 2 * z_om + z_mm ))/8
+                
+                slope = np.sqrt(dz_dx**2 + dz_dy**2)
+                slope_matrix[i, j] = np.degrees(np.arctan(slope))
+
+        slope_matrix = slope_matrix/slope_matrix.max() #normalize
+        return slope_matrix
+    
     def cut_image_regions(self, window = None):
         """
         Cuts the image data in to regions around clusters determine by Voronoi algorithm if window id None. If window is given: cuts image in squers with the length of window
@@ -662,7 +686,8 @@ class clusterpic():
         Args:
             window (int): length of a side of a rectangular for the window bilding arraound a cluster 
         """
-        
+        if np.all(self.slope_map):
+            self.slope_map = clusterpic.calculate_slope(self.data)
         if window is not None:
             region_type = f'rectangular {window} pix'
             self.heights.index.name = region_type
@@ -692,6 +717,8 @@ class clusterpic():
                 a_region = region()
                 a_region.region_id = idx
                 a_region.coordinates = np.array(slice_xyz)
+                a_region.slope_map = self.slope_map[y_range[0]:y_range[1],x_range[0]:x_range[1]]
+                a_region.slope_map = a_region.slope_map/a_region.slope_map.max() #normolize
                 a_region.cluster_peak_coordinates = np.array(i)
                 a_region.region_type = region_type
                 self.regions.append(a_region)
@@ -699,24 +726,28 @@ class clusterpic():
             self.regions = []
             region_type = 'voronoi'
             self.heights.index.name = region_type
-            vor = Voronoi( np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
-            regions, vertices = self.voronoi_finite_polygons_2d(vor)### conver regions in to finit regeons
+            vor = Voronoi(np.vstack((self.clusters_coord[:,0], self.clusters_coord[:,1])).T, qhull_options='Qbb Qc Qx')
+            regions, vertices = self.voronoi_finite_polygons_2d(vor)### convert regions in to finit regions
             coor_regieons = []
             xyz_data = []
+            xyz_slope_map = []
             for iy, ix in np.ndindex(self.data.shape): ###Reshaping NxN array int too 3XN .shoulb be vectorized!!!! 
                 xyz_data.append([ix,iy,self.data[ix,iy]])
-            #[xyz_data.append([ix,iy,data[ix,iy]]) for iy, ix in np.ndindex(data.shape)] ### slower!!
+                xyz_slope_map.append([ix,iy,self.slope_map[ix,iy]]) 
             xyz_data = np.array(xyz_data)
-            #start_time = time.time()
             xy_data = np.array([xyz_data[:,1],xyz_data[:,0]]).T ### reduce from 3XN to 2XN needed for matplotlib.path.path.contains_points
+            xyz_slope_map = np.array(xyz_slope_map)
+            xy_slope_map = np.array([xyz_slope_map[:,1],xyz_slope_map[:,0]]).T ### reduce from 3XN to 2XN needed for matplotlib.path.path.contains_points
             for idx,i in enumerate(regions): ##### Very Very slow need vectorization!!!!!!
                 polygon_coord = path.Path(vertices[i]) ### extracting coordinates out of polygon
                 a2d_coordinates_of_area = polygon_coord.contains_points(xy_data,radius=0.0)
+                a2d_coordinates_of_slope = polygon_coord.contains_points(xy_slope_map,radius=0.0)
+
                 a3d_area = xyz_data[a2d_coordinates_of_area]
+                a3d_slope_map = xyz_slope_map[a2d_coordinates_of_slope]
                 dict_a3d_area = {}
                 for i in a3d_area:
                      dict_a3d_area[(i[0],i[1])] = i[2]
-              #  [(dict_a3d_area[(i[0],i[1])] = i[2]) for i in a3d_area]
                 breakIt = False
                 cluster_max_inthearea = None
                 for k in self.clusters_coord:
@@ -730,13 +761,16 @@ class clusterpic():
                 a_region = region()
                 a_region.region_id = idx
                 a_region.coordinates = a3d_area
+                a_region.slope_map = a3d_slope_map
+                a_region.slope_map[:,2] = a_region.slope_map[:,2]/a_region.slope_map[:,2].max() #normolize
                 a_region.cluster_peak_coordinates = np.array(cluster_max_inthearea)
                 a_region.region_type = region_type
                 self.regions.append(a_region) 
                 #self.coor_regieons.update({idx:{'x_min_id_offset':x_range[0], 'y_min_id_offset':y_range[0],'slice':aslice,'xyz(max)':cluster_max_inthearea}})
                 
-   
+        
     
+        
     def parralel_correct_height(self, 
                         slope_threshold_factor = 0.1, 
                          groundlevel_cutoff = 0.30, 
@@ -749,7 +783,7 @@ class clusterpic():
         """
         Calculates the hights in parralel
         """
-        for region in self.regions: #set some variales
+        for region in self.regions: #set some variables
             region.slope_threshold_factor = slope_threshold_factor 
             region.groundlevel_cutoff = groundlevel_cutoff
             region.method=method
@@ -759,7 +793,7 @@ class clusterpic():
             region.cutoff_points = cutoff_points
             region.seek_for_steps = seek_for_steps
         a_pool = multiprocessing.Pool()
-        try:
+        try:    
             self.regions = a_pool.map(self.correct_heights_4_regions,
                                       self.regions)
             a_pool.close()
@@ -777,6 +811,7 @@ class clusterpic():
         """
         i.find_groundlevel()
         i.calc_true_hight()
+        #print(f'{i.region_id} Done')
         return i
 
     def calc_true_height_4_every_region(self, 
