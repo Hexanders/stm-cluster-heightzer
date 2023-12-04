@@ -150,7 +150,7 @@ class region():
         else:
             t = np.sqrt(abs(max(ground_level[:,0])-min(ground_level[:,0]))**2.+ 
                     abs(max(ground_level[:,1])-min(ground_level[:,1]))**2.+
-                       abs(max(ground_level[:,2])-min(ground_level[:,2]))**2.)*self.thold_default_factor  # default threshold   
+                       abs(max(ground_level[:,2])-min(ground_level[:,2]))**2.)*self.thold_default_factor  # default threshold some sort of coordinates mean of ground level  
         clusters = fcluster(Z, t, criterion='distance',depth = 5) 
         self.ground_level_regions = [ground_level[np.where(clusters==k)[0].tolist()] for k in np.unique(clusters)]
 
