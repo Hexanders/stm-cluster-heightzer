@@ -12,6 +12,7 @@ from matplotlib import cm
 import multiprocessing 
 from sklearn.neighbors import KernelDensity
 import time
+import warnings
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from decimal import Decimal
@@ -67,14 +68,8 @@ class clusterpic():
         self.coor_regieons = []
         self.regions = []
         # self.tmp = [] # for debuging
-        self.heights = pd.DataFrame(columns = ['x',
-                                               'y',
-                                               f'x_{self.si_unit_xy}',
-                                               f'y_{self.si_unit_xy}',
-                                               'initial_Z', 
-                                               'corrected_Z_averaged', 
-                                               'corrected_Z_closest_step',
-                                              'corrected_Z_highest_step'])
+        self.creat_heights_table()
+        #self.heights = pd.DataFrame([])
         self.cluster_distribution = None
         self.slope_map = []
    
@@ -92,6 +87,16 @@ class clusterpic():
     def __repr__(self):
         return f"{self.name}"
     
+    def creat_heights_table(self):
+        self.heights = pd.DataFrame(columns = ['x',
+                                               'y',
+                                               f'x_{self.si_unit_xy}',
+                                               f'y_{self.si_unit_xy}',
+                                               'initial_Z', 
+                                               'corrected_Z_averaged', 
+                                               'corrected_Z_closest_step',
+                                              'corrected_Z_highest_step'])
+       
     def dump_picture(self,
                      prefix : str = None, 
                      sufix : str = '_clusterpic_obj',
@@ -686,6 +691,8 @@ class clusterpic():
         Args:
             window (int): length of a side of a rectangular for the window bilding arraound a cluster 
         """
+        if not self.heights.empty:
+            self.creat_heights_table()
         if np.all(self.slope_map):
             self.slope_map = clusterpic.calculate_slope(self.data)
         if window is not None:
@@ -771,7 +778,7 @@ class clusterpic():
         
     
         
-    def parralel_correct_height(self, 
+    def parallel_correct_height(self, 
                         slope_threshold_factor = 0.1, 
                          groundlevel_cutoff = 0.30, 
                          method='complete',
@@ -780,9 +787,34 @@ class clusterpic():
                          thold_default_factor = 1.1,
                          cutoff_points = 5,
                          seek_for_steps = 'False'):
+        
         """
-        Calculates the hights in parralel
-        """
+        Calculates the heights in parallel for image regions.
+
+        Args:
+            slope_threshold_factor (float): Factor for slope threshold (default 0.1).
+            groundlevel_cutoff (float): Ground level cutoff (default 0.30).
+            method (str): Method for correction (default 'complete').
+            metric (str): Metric for correction (default 'minkowski').
+            threshold (str): Threshold for correction (default 'default' : Some sort of coordinates mean of ground level sea self.region() ) 
+            thold_default_factor (float): Factor for default threshold (default 1.1).
+            cutoff_points (int): Cutoff points for correction (default 5).
+            seek_for_steps (bool): Flag indicating whether to seek for steps (default False).
+
+        Raises:
+            Warning: If no regions are found. Please use self.cut_image_regions() first.
+
+        Returns:
+            None
+
+        Note:
+            The function utilizes multiprocessing for parallel correction of heights for each region found in the image.
+    """
+       
+        #if not self.heights.empty:
+        #    self.creat_heights_table()
+        if not self.regions:
+            warnings.warn("No regions found. Please use self.cut_image_regions() first")
         for region in self.regions: #set some variables
             region.slope_threshold_factor = slope_threshold_factor 
             region.groundlevel_cutoff = groundlevel_cutoff
@@ -801,13 +833,12 @@ class clusterpic():
             beepy.beep(sound=3)
             a_pool.close()
             logging.error(traceback.format_exc())
-        self.heights = self.heights[0:0] #empty heigths table
         for idx,i in enumerate(self.regions):# collecting corrected hights
             self.update_height(i, idx)
             
     def correct_heights_4_regions(self, i):
         """
-        just needed fo parralel_correct_height()
+        just needed fo parallel_correct_height()
         """
         i.find_groundlevel()
         i.calc_true_hight()
@@ -895,7 +926,7 @@ class clusterpic():
                        show_regions = False,
                        face_color = 'red',
                        rim_color = 'black', 
-                       alpha = 0.8):
+                       alpha = 0.3):
         """
         Plots Cluster coordinates over data and let you delet and add cluster position by mouse click
 
@@ -975,13 +1006,15 @@ class clusterpic():
     
     def update_height(self, region, index):
         y,x,z = region.cluster_peak_coordinates
-        x_m = x*self.xreal/self.xres
-        y_m = y*self.yreal/self.yres
-        true_height = region.true_hight
-        true_height_closest= region.true_hight_closest_ground_level
-        true_height_heighest= region.true_hight_heighest_ground_level
-        # self.heights([x,y,z, true_height, true_height_closest], columns = ['x','y','initial z', 'corrected Z averaged', 'corrected Z closest step'], index = index)
-        self.heights.loc[index] = [x,y,x_m,y_m,z, true_height, true_height_closest,true_height_heighest]
+        self.heights.loc[index] = [x,
+                                   y,
+                                   x*self.xreal/self.xres,
+                                   y*self.yreal/self.yres,
+                                   z,
+                                   region.true_hight,
+                                   region.true_hight_closest_ground_level,
+                                   region.true_hight_heighest_ground_level]
+
     def show_regions(self, 
                      figsize =(10,10), 
                      alpha = 0.65,
@@ -1236,13 +1269,11 @@ def load_from_gwyddion(path : str) -> clusterpic:
     """
     obj = gwyload(path)
     channels = get_datafields(obj)
-    objreturn =[]
+    objreturn ={}
     for i in channels.keys():
-        #print(channels[i])
-        objreturn.append(
-            clusterpic(
+        objreturn[i] =  clusterpic(
                     path = path,
-                    name = i,
+                    name = f'{channels[i]["xres"]}x{channels[i]["yres"]} pix {channels[i]["xreal"]:.2e}x{channels[i]["yreal"]:.2e} m',
                     data = channels[i].data,
                     xres = channels[i]['xres'],
                     yres = channels[i]['yres'],
@@ -1250,7 +1281,8 @@ def load_from_gwyddion(path : str) -> clusterpic:
                     yreal = channels[i]['yreal'],
                     si_unit_xy = channels[i]['si_unit_xy'],
                     si_unit_z = channels[i]['si_unit_z']
-                ))
+                )
+        
     return objreturn
 
 def load_from_pickle(path : str) -> clusterpic:
