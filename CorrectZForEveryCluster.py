@@ -392,6 +392,15 @@ class clusterpic():
         """
         return self.peak_XYdata
     
+    def distance_between_clusters(self, first, second):
+        """
+        calculates distance between clusters by number so distance between first and second cluster would be self.distance_between_cluster(1,2)
+        """
+        nm_per_pix = (self.xreal/self.xres)
+        return np.sqrt( (self.clusters_coord[first][0]*nm_per_pix -  self.clusters_coord[second][0]*nm_per_pix)**2.
+                         + (self.clusters_coord[first][1]*nm_per_pix -  self.clusters_coord[second][1]*nm_per_pix)**2.
+                       )
+    
     def finde_nn_in_r(self, dr = np.sqrt(1e-9**2+1e-9**2), count_solo_cluster = False):
         """
         Finds the nearest neighbors within a given distance for each coordinate in `coord`.
@@ -1014,6 +1023,28 @@ class clusterpic():
                                    region.true_hight,
                                    region.true_hight_closest_ground_level,
                                    region.true_hight_heighest_ground_level]
+    def height_distribution(self, bins = "auto"):
+        """
+        Plot the distribution of heights.
+
+        Args:
+            bins (str or dict): Specification for the number of bins in the histogram.
+                - If 'auto', the number of bins is determined automatically.
+                - If a dictionary, expected format is {"bin_width": float}, where 'bin_width' is the width of each bin.
+
+        Returns:
+            tuple: A tuple containing the histogram values and bin edges.
+
+        Note:
+            This function concatenates the height data from multiple dimensions and plots the histogram.
+            The number of bins can be set automatically or specified using a dictionary with the bin width.
+        """
+        ondDimData = np.concatenate(self.data)
+        if isinstance(bins, dict):
+            w  = bins["bin_width"]
+            bins = np.arange(min(ondDimData), max(ondDimData) + w, w)
+        hist = plt.hist(ondDimData, bins = bins)
+        return hist
 
     def show_regions(self, 
                      figsize =(10,10), 
@@ -1044,7 +1075,7 @@ class clusterpic():
             # break
         
         
-    def plot_heights_distribution(self,
+    def plot_clusters_heights_distribution(self,
                                               bins = 10, 
                         bandwidth = 0.3E-9, 
                         figsize = (8,8), 
@@ -1052,6 +1083,25 @@ class clusterpic():
                         subtitle = False, 
                         sub_fontsize = 12,
                                  return_bining = False):
+        """
+        Plot the distribution of corrected heights for different cluster averaging methods.
+
+        Args:
+            bins (int): Number of bins for the histogram (default 10).
+            bandwidth (float): Bandwidth for kernel density estimation (default 0.3E-9).
+            figsize (tuple): Size of the figure (default (8, 8)).
+            axfontsize (int): Font size for axis labels (default 10).
+            subtitle (bool): Flag to include subtitles (default False).
+            sub_fontsize (int): Font size for subtitles (default 12).
+            return_bining (bool): Flag to return histogram binning data (default False).
+
+        Returns:
+            None or tuple: If return_bining is True, returns a tuple containing histogram binning data.
+
+        Note:
+            This function generates a 2x2 subplot with histograms and kernel density plots for the corrected heights
+            obtained using different cluster averaging methods: average, closest step, and highest step.
+        """
         fig = make_subplots(rows=2, cols=2,
                             horizontal_spacing = 0.15,
                             vertical_spacing = 0.15,
