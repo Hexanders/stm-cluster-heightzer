@@ -8,7 +8,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d, cKDTree
 from matplotlib import path ### just for "drawing" an polygon for later extraction of the values inside this polygon
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import cm
+from matplotlib import cm, ticker
 import multiprocessing 
 from sklearn.neighbors import KernelDensity
 import time
@@ -258,10 +258,14 @@ class clusterpic():
             peak_data = df_column.combine_first(df_rows)
 
         self.peak_XYdata = peak_data
-        
+
     def show_data(self,
                   ax =None,
                   cmap = 'gray',
+                  data_multiplayer = 1,
+                  cbar_on = True,
+                  cbar_fraction = 0.04740,
+                  cbar_pad =  0.004,
                   bar = True,
                   bar_space_left = 0.05, # space in % from hole range
                   bar_space_bottom = 0.95,# space in % from hole range
@@ -278,34 +282,35 @@ class clusterpic():
                   font_size= 10,
                   ):
         """
-        Plots the scanning tunneling microscope (STM) data.
+    Plots the scanning tunneling microscope (STM) data.
 
-        Parameters:
-        -----------
-        cmap: str
-            The colormap used for the plot. Default is 'gray'.
-        bar: bool
-            Whether to show a bar on the plot or not. Default is True.
-        bar_space_left: float
-            The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
-        bar_space_bottom: float
-            The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
-        bar_length: float
-            The length of the bar in nanometers. Default is 100.
-        bar_color: str
-            The color of the bar. Default is 'white'.
-        bar_size: float
-            The width of the bar in points. Default is 10.
-        unit: str
-            The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
-        no_ticks: bool
-            Whether to show axis ticks or not. Default is False.
+    Parameters:
+    -----------
+    cmap: str
+        The colormap used for the plot. Default is 'gray'.
+    
+    bar: bool
+        Whether to show a bar on the plot or not. Default is True.
+    bar_space_left: float
+        The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
+    bar_space_bottom: float
+        The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
+    bar_length: float
+        The length of the bar in nanometers. Default is 100.
+    bar_color: str
+        The color of the bar. Default is 'white'.
+    bar_size: float
+        The width of the bar in points. Default is 10.
+    unit: str
+        The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
+    no_ticks: bool
+        Whether to show axis ticks or not. Default is False.
 
-        Returns:
-        --------
-        fig, ax: tuple
+    Returns:
+    --------
+    fig, ax: tuple
         The figure and axis objects of the plot.
-        """
+    """
         from matplotlib import ticker as mpl_ticker
         if not ax:
             fig, ax = plt.subplots()
@@ -321,28 +326,32 @@ class clusterpic():
                     multiplayer = 1e6
                     
             bar_length = round(self.xreal*0.1*multiplayer)
-        im = ax.imshow(self.data,
+        im = ax.imshow(self.data*data_multiplayer,
                    cmap = cmap,
                    #origin = 'lower',
-                   extent =[0, self.xreal, self.yreal, 0]
+                       interpolation = None,
+                   extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
                    )
         if show_clusters:
             for i in range(0,len(self.clusters_coord)):
-                ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres),
-                    self.clusters_coord[:,1][i]*(self.yreal/self.yres),
+                ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer,
+                    self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer,
                         'o', c = 'r', ms = clusters_markersize)
+            
         if bar:
-            ax.hlines(self.yreal*bar_space_bottom,
+            ax.hlines(self.yreal*bar_space_bottom*data_multiplayer,
                        #1E-8,
-                       xmin= self.xreal*bar_space_left,
-                       xmax = self.xreal*bar_space_left + bar_length*1e-9,
+                       xmin= self.xreal*bar_space_left*data_multiplayer,
+                       xmax = self.xreal*bar_space_left + bar_length*1e-9*data_multiplayer,
                        colors = bar_color,
                        linewidth = bar_size)
     
             ax.annotate(str(bar_length)+' '+unit,
-                    (self.xreal*bar_space_left*bar_label_xshift,self.yreal*bar_space_bottom*bar_label_yshift),
+                    (self.xreal*bar_space_left*bar_label_xshift*data_multiplayer,
+                     self.yreal*bar_space_bottom*bar_label_yshift*data_multiplayer),
                              
                              color = bar_color)
+        
         if unit == 'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
         if unit == '$\mu$m':
@@ -353,24 +362,6 @@ class clusterpic():
         
         fmt = mpl_ticker.FuncFormatter(func)
 
-        # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-        # axins = inset_axes(ax,
-        #             width="1%",  
-        #             height="100%",
-        #             bbox_to_anchor=(1,0.5),
-        #             # loc='lower center',
-        #             #borderpad=-5
-        #            )
-        cbar = plt.colorbar(im,
-                            #cax=axins,
-                            format = fmt,
-                            pad = 0.01)
-        
-        cbar.ax.set_title(unit,
-                          loc= 'right',
-                          pad = 0)
-        #cbar.ax.set_ylabel(unit)
-        if bar_ticks == False: cbar.ax.tick_params(size = 0, pad =0.3)
         if no_ticks:
             # Hide X and Y axes label marks
             ax.xaxis.set_tick_params(labelbottom=False)
@@ -379,11 +370,21 @@ class clusterpic():
             # Hide X and Y axes tick marks
             ax.set_xticks([])
             ax.set_yticks([])
-        #plt.tight_layout()
-        #plt.subplots_adjust(wspace=0.01)
-        
+        if cbar_on:
+            cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad)
+            tick_locator = ticker.MaxNLocator(nbins=9)
+            cbar.locator = tick_locator
+            cbar.ax.tick_params(direction = 'out')
+            cbar.update_ticks()
+            cbar.ax.set_xticks(cbar.ax.get_xticks()) ## strange avoding of error
+            cbar.ax.set_yticks(cbar.ax.get_yticks())
+            ticklabs = cbar.ax.get_yticklabels()
+            cbar.ax.set_yticklabels(ticklabs, fontsize=3)
+            cbar.ax.set_title(r'\si{\nano\meter}', fontsize = 1, pad = 1)
+       
             
         return ax
+    
     
     def get_peakXYdata(self):
         """
@@ -392,6 +393,31 @@ class clusterpic():
         """
         return self.peak_XYdata
     
+    def calculate_angle_betwee_3_clusters(self, cls1, cls2, cls3):
+        """
+        Calculates the angle in degrees between three clusters in a 2D space.
+
+        Parameters:
+        - cls1 (int): Index of the first cluster.
+        - cls2 (int): Index of the second cluster (common vertex).
+        - cls3 (int): Index of the third cluster.
+
+        Returns:
+        float: The angle in degrees between the vectors formed by the clusters.
+        """
+        vector1 = np.array(self.clusters_coord[cls1]) - np.array(self.clusters_coord[cls2])
+        vector2 = np.array(self.clusters_coord[cls3]) - np.array(self.clusters_coord[cls2])
+
+        # Calculate the cosine of the angle
+        cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+
+        # Use arccosine to get the angle in radians
+        angle_radians = np.arccos(cosine_angle)
+
+        # Convert radians to degrees
+        angle_degrees = np.degrees(angle_radians)
+
+        return angle_degrees
     def distance_between_clusters(self, first, second):
         """
         calculates distance between clusters by number so distance between first and second cluster would be self.distance_between_cluster(1,2)
