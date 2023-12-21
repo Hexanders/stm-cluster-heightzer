@@ -168,13 +168,13 @@ class clusterpic():
             self.clusters_coord = pickle.load(input_file)
 
     
-    def walk_to_the_extrema(self,test_data, xyz_current_max, extrema = max, pixelRange = 2):
+    def walk_to_the_extrema(self,test_data, xyz_current_max, extrema = 'max', pixelRange = 2):
         """
         Finds locle maxima by slicing test_data (NXN array) here STM image data with a window of +- PixelRange in first and second dimension. 
         It searches for local maxima in the slices and if there is no other maxima the search is aborted.
 
         Parameters:
-
+        extrema: str: 'max' or 'min' if min find minima if max find maxima :)
         test_data: NxN numpy array, STM image data
         xyz_current_max: list of [x,y,z] coordinates of maximum/point from witch start searching
         pixelRange: integer, how big is the wind in wich to search. E.g pixelRange=4 produces 8X8 window (array with the shape = (8,8))
@@ -975,18 +975,23 @@ class clusterpic():
                        extrema = 'max',
                        alpha = 0.3):
         """
-        Plots Cluster coordinates over data and let you delet and add cluster position by mouse click
+            Plots cluster coordinates over data and allows deletion and addition of cluster positions by mouse click.
 
-        Parameter:
-            data: 2d numpy array, STM Image
-            cluster_coordinates: nX3 numpy arra line ([ x1,y1,z1],[x2,y2,z2], ...), xyz coordinates of prefound clusters by finde_peaks_in_rows()
-            !! Atention!! This function defindes global peakable_artist variable, witsch you can am must use outside this function. 
-                Otherwisse the hand peaking of clusters wuld not work
-            voronoi_pattern: boolean, if True Voronoi pattern are showen in picture
-        Returns: 
-            matplotlib.axes
-            pickable_artists: list of x,y,z cluster coordinates, if some werde deleted or added differs from cluster_coordinates
+            Parameters:
+            - cluster_numbers (bool): If True, cluster indices are annotated on the plot.
+            - markersize (int): Size of the markers representing clusters.
+            - figsize (tuple): Figure size (width, height) in inches.
+            - pixelRange (int): Pixel range used for finding extrema when adding a new cluster.
+            - pikerRange (int): Picker range for identifying a cluster marker during mouse click.
+            - show_regions (bool): If True, regions such as Voronoi patterns or rectangles are shown on the plot.
+            - face_color (str): Face color of the region patches.
+            - rim_color (str): Rim color of the region patches.
+            - extrema (str): Specifies whether to walk to the 'max' or 'min' extrema when adding a new cluster.
+            - alpha (float): Alpha value for controlling the transparency of the region patches.
 
+            Returns:
+            - matplotlib.axes: The plot's axes.
+            - pickable_artists (list): List of x, y, z cluster coordinates, with potential additions or deletions.
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
