@@ -168,7 +168,7 @@ class clusterpic():
             self.clusters_coord = pickle.load(input_file)
 
     
-    def walk_to_the_max(self,test_data, xyz_current_max, pixelRange = 2):
+    def walk_to_the_extrema(self,test_data, xyz_current_max, extrema = max, pixelRange = 2):
         """
         Finds locle maxima by slicing test_data (NXN array) here STM image data with a window of +- PixelRange in first and second dimension. 
         It searches for local maxima in the slices and if there is no other maxima the search is aborted.
@@ -179,10 +179,10 @@ class clusterpic():
         xyz_current_max: list of [x,y,z] coordinates of maximum/point from witch start searching
         pixelRange: integer, how big is the wind in wich to search. E.g pixelRange=4 produces 8X8 window (array with the shape = (8,8))
         """
-        no_new_max_found = True
+        no_new_extrema_found = True
         suspect = xyz_current_max#[1],xyz_current_max[0], xyz_current_max[2]
         step_counter = 0
-        while no_new_max_found:
+        while no_new_extrema_found:
             step_counter +=1
             y_range = [suspect[0]-pixelRange, suspect[0]+pixelRange]
             if y_range[0] < 0:y_range[0] = 0 # if you hit the boundaries important for correction later see maxXX
@@ -191,17 +191,28 @@ class clusterpic():
             if x_range[0] < 0 : x_range[0] = 0  # if you hit the boundaries
             if x_range[1] > test_data.shape[1] : x_range[1] = test_data.shape[1] # if you hit the boundaries
             aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
-            maxX, maxY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
-            maxXX, maxYY = maxX+x_range[0], maxY+y_range[0] ## correct for the actual array, so not the slice
+            if extrema == 'min':
+                extremaX, extremaY = np.unravel_index(aslice.argmin(), aslice.shape) ## finde maximum ids in 2d array slice
+            else:
+                extremaX, extremaY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
+            extremaXX, extremaYY = extremaX+x_range[0], extremaY+y_range[0] ## correct for the actual array, so not the slice
             #self.tmp.append([aslice.max() ,suspect])
             if np.isnan(suspect[2]): ### some times it is just nan, no idea why. This is not very good fix but it works
                 suspect[2] = 0.0
-            if aslice.max() > suspect[2]:
-                suspect = [maxYY, maxXX, aslice.max() ]
+            if extrema == 'min':
+                if aslice.min() < suspect[2]:
+                    suspect = [extremaYY, extremaXX, aslice.min() ]
                 
-                #no_new_max_found = False
+                    #no_new_max_found = False
+                else:
+                    no_new_extrema_found = False
             else:
-                no_new_max_found = False
+                if aslice.max() > suspect[2]:
+                    suspect = [extremaYY, extremaXX, aslice.max() ]
+                
+                    #no_new_max_found = False
+                else:
+                    no_new_extrema_found = False
 
         return suspect,y_range,x_range, aslice, step_counter
     
@@ -526,14 +537,14 @@ class clusterpic():
         self.clusters_coord = clusters_coord
         
         
-    def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False):
+    def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False, extrema = 'max'):
         """
         Updates the list of clusters withch was peakt by cluster_peaker() or by given list xyz
         Parameters:
             data: 2d numpy array, STM Image
             pickable_artists: matplotlib.pickable_artists
             xyz: [x,y,z] or list of [[x1,y1,z1], [x2,y2,z2], ...] coordinates if something gets wrong with the UI peaking cluster
-            max_crawler: If True an xy is given, uses walk_to_the_max() for finding maximum
+            max_crawler: If True an xy is given, uses walk_to_the_extrema() for finding maximum/minimum
         Returns:
             clusters_coord: nX3 numpy array ([x1,y1,z1],[x2,y2,z2], ... )
         """
@@ -544,13 +555,13 @@ class clusterpic():
                 new_xyz = []
                 for i in xyz:
                     if max_crawler:
-                        new_xyz.append(np.array(self.walk_to_the_max(self.data,i)[0]))
+                        new_xyz.append(np.array(self.walk_to_the_extrema(self.data,i, extrema = extrema)[0]))
                     else:
                         new_xyz.append(i)
                 clusters_coord = np.vstack((clusters_coord,np.array(new_xyz)))
             else:
                 if max_crawler:
-                    new_xyz = self.walk_to_the_max(self.data,xyz)[0]
+                    new_xyz = self.walk_to_the_extrema(self.data,xyz, extrema = extrema)[0]
                     clusters_coord = np.vstack((clusters_coord,np.array(new_xyz)))
                 else:
                     clusters_coord = np.vstack((clusters_coord,np.array([int(xyz[0]),int(xyz[1]),self.data[int(xyz[0])][int(xyz[1])]])))
@@ -960,7 +971,8 @@ class clusterpic():
                        pikerRange = 10,
                        show_regions = False,
                        face_color = 'red',
-                       rim_color = 'black', 
+                       rim_color = 'black',
+                       extrema = 'max',
                        alpha = 0.3):
         """
         Plots Cluster coordinates over data and let you delet and add cluster position by mouse click
@@ -1001,7 +1013,7 @@ class clusterpic():
 
         removable = []
     
-        def onclick(event,pickable_artists,gwy_data):
+        def onclick(event,pickable_artists,gwy_data, extrema = extrema):
             if event.inaxes is not None and not hasattr(event, 'already_picked'):
                 ax = event.inaxes
 
@@ -1010,7 +1022,7 @@ class clusterpic():
                 if not remove:
                     # add a pt        
                     x, y = ax.transData.inverted().transform_point([event.x, event.y])
-                    new_max = self.walk_to_the_max(self.data,[int(x),int(y),self.data[int(x)][int(y)]],pixelRange=pixelRange)
+                    new_max = self.walk_to_the_extrema(self.data,[int(x),int(y),self.data[int(x)][int(y)]],pixelRange=pixelRange, extrema = extrema)
                     pt, = ax.plot(new_max[0][0], new_max[0][1], 'o', picker=pikerRange, c='r')
                     pickable_artists.append(pt)
                     removable.append(new_max)
@@ -1021,7 +1033,7 @@ class clusterpic():
                     for artist in remove:
                         artist.remove()
                 plt.draw()
-        self.cid = fig.canvas.mpl_connect('button_press_event',lambda event: onclick(event,pickable_artists,self.data))
+        self.cid = fig.canvas.mpl_connect('button_press_event',lambda event: onclick(event,pickable_artists,self.data, extrema = extrema))
 
         # ax.set_xlim(vor.min_bound[0] - 10, vor.max_bound[0] + 10)
         # ax.set_ylim(vor.min_bound[1] - 10, vor.max_bound[1] + 10)
