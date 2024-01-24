@@ -1070,6 +1070,9 @@ class clusterpic():
                        figsize=(10,10), 
                        pixelRange = 2,
                        pikerRange = 10,
+                       mask =None,
+                       data_multiplayer = 1,
+                       cmap = 'grey',
                        show_regions = False,
                        face_color = 'red',
                        rim_color = 'black',
@@ -1108,7 +1111,22 @@ class clusterpic():
                         x_min , x_max, y_min, y_max =min(i.coordinates[:,0]), max(i.coordinates[:,0]), min(i.coordinates[:,1]), max(i.coordinates[:,1])
                         rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=face_color,ec=rim_color, alpha = alpha)
                         ax.add_patch(rectangle)
-        ax.imshow(self.data)
+        #ax.imshow(self.data)
+        if mask:
+            for mski in mask:
+                in_your_face =  masked_outside(self.data*data_multiplayer,mski[0],mski[1])
+                im = ax.imshow(in_your_face,
+                               cmap=cmap,
+                                interpolation = None,
+                               #extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                               )
+        else:
+            im = ax.imshow(self.data*data_multiplayer,
+                           cmap = cmap,
+                           #origin = 'lower',
+                           interpolation = None,
+                           #extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                           )
         
         pickable_artists = []
         for i in range(0,len(self.clusters_coord)):
