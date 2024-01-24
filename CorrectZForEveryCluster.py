@@ -373,7 +373,7 @@ class clusterpic():
             ax.hlines(self.yreal*bar_space_bottom*data_multiplayer,
                        #1E-8,
                        xmin= self.xreal*bar_space_left*data_multiplayer,
-                       xmax = self.xreal*bar_space_left + bar_length*1e-9*data_multiplayer,
+                       xmax = self.xreal*bar_space_left*data_multiplayer + bar_length*1e-9*data_multiplayer,
                        colors = bar_color,
                        linewidth = bar_size)
     
