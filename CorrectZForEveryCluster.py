@@ -16,10 +16,12 @@ import warnings
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from decimal import Decimal
+from numpy.ma import masked_outside
 import traceback
 import logging
 import beepy
 from os import listdir
+
 
 class clusterpic():
     """
@@ -275,6 +277,7 @@ class clusterpic():
                   cmap = 'gray',
                   data_multiplayer = 1,
                   cbar_on = True,
+                  cbar_location = 'right',
                   cbar_fraction = 0.04740,
                   cbar_pad =  0.004,
                   bar = True,
@@ -286,10 +289,12 @@ class clusterpic():
                   bar_label_xshift = 1.5,   # in percent from origin
                   bar_label_yshift = 0.99,  # in percent from origin
                   bar_ticks = False,
+                  mask = None,
                   unit = 'nm',
                   no_ticks =False,
                   show_clusters = False,
                   clusters_markersize = 3,
+                  clusters_markercolor = 'r',
                   font_size= 10,
                   ):
         """
@@ -300,6 +305,8 @@ class clusterpic():
     cmap: str
         The colormap used for the plot. Default is 'gray'.
     
+    mask: list of lists:
+        Plots only regions inside the numbers e.g. a,b for mask =[[a,b], [a1,b1], ...] 
     bar: bool
         Whether to show a bar on the plot or not. Default is True.
     bar_space_left: float
@@ -337,17 +344,26 @@ class clusterpic():
                     multiplayer = 1e6
                     
             bar_length = round(self.xreal*0.1*multiplayer)
-        im = ax.imshow(self.data*data_multiplayer,
-                   cmap = cmap,
-                   #origin = 'lower',
-                       interpolation = None,
-                   extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
-                   )
+        if mask:
+            for mski in mask:
+                in_your_face =  masked_outside(self.data*data_multiplayer,mski[0],mski[1])
+                im = ax.imshow(in_your_face,
+                               cmap=cmap,
+                                interpolation = None,
+                               extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                               )
+        else:
+            im = ax.imshow(self.data*data_multiplayer,
+                           cmap = cmap,
+                           #origin = 'lower',
+                           interpolation = None,
+                           extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                           )
         if show_clusters:
             for i in range(0,len(self.clusters_coord)):
                 ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer,
                     self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer,
-                        'o', c = 'r', ms = clusters_markersize)
+                        'o', c = clusters_markercolor, ms = clusters_markersize)
             
         if bar:
             ax.hlines(self.yreal*bar_space_bottom*data_multiplayer,
@@ -382,7 +398,7 @@ class clusterpic():
             ax.set_xticks([])
             ax.set_yticks([])
         if cbar_on:
-            cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad)
+            cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad, location = cbar_location)
             tick_locator = ticker.MaxNLocator(nbins=9)
             cbar.locator = tick_locator
             cbar.ax.tick_params(direction = 'out')
@@ -973,6 +989,7 @@ class clusterpic():
                        face_color = 'red',
                        rim_color = 'black',
                        extrema = 'max',
+                       title_fontsize = 8,
                        alpha = 0.3):
         """
             Plots cluster coordinates over data and allows deletion and addition of cluster positions by mouse click.
@@ -1050,7 +1067,7 @@ class clusterpic():
             for i in range(0,len(self.clusters_coord)):
                 ax.annotate(i, (self.clusters_coord[:,0][i], self.clusters_coord[:,1][i]), fontsize=8)
 
-        ax.set_title('Total clusters: '+str(len(self.clusters_coord)))
+        ax.set_title('Total clusters: '+str(len(self.clusters_coord)), fontsize = title_fontsize,)
         ax.set_ylim(ax.get_ylim()[::-1])        # invert the axis
         ax.xaxis.tick_top()                     # and move the X-Axis
         fig.set_facecolor('white')
