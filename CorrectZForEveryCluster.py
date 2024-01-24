@@ -461,9 +461,9 @@ class clusterpic():
         # Extract intensity values along the path
         intensity_profile = self.data[rr, cc]
         dd_zero = [rr[0],cc[0]]
-        dd = [np.sqrt( ((x-dd_zero[0])*(self.xreal/self.xres))**2. + ((y-dd_zero[1])*(self.yreal/self.yres))**2.) for x,y in zip(rr,cc) ] #distance from first point just cartesian distances
+        dd = np.array([np.sqrt( ((x-dd_zero[0])*(self.xreal/self.xres))**2. + ((y-dd_zero[1])*(self.yreal/self.yres))**2.) for x,y in zip(rr,cc) ]) #distance from first point just cartesian distances
         profiles = np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
-        self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres),'y':profiles[:,1]*(self.yreal/self.yres),'distance':profiles[:,2], 'intensity':profiles[:,3]}
+        self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres)*data_multiplayer,'y':profiles[:,1]*(self.yreal/self.yres)*data_multiplayer,'distance':profiles[:,2], 'intensity':profiles[:,3]}
         return profiles
     
     def intensity_profile_along_path_multi(self, list_of_all_cluster_pairs =[], data_multiplayer = 1):
