@@ -13,6 +13,7 @@ import multiprocessing
 from sklearn.neighbors import KernelDensity
 import time
 import warnings
+from skimage import draw
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from decimal import Decimal
@@ -21,6 +22,7 @@ import traceback
 import logging
 import beepy
 from os import listdir
+
 
 
 class clusterpic():
@@ -412,6 +414,49 @@ class clusterpic():
             
         return ax
     
+    def intensity_profile_along_path(self, cluster_numbers = 'all', data_multiplayer = 1):
+        """
+        Generate intensity profile along a specified path.
+
+        Parameters:
+        - cluster_numbers (str or list): If 'all', consider all clusters. If a list, specify cluster indices.
+                                         If a list with two elements, generate a straight line between two clusters.
+                                         If a list with more than two elements, generate a zigzag line between specified clusters.
+
+        - data_multiplier (float): Multiplier to scale the intensity values.
+
+        Returns:
+        numpy.ndarray: Array containing information along the path. Each row represents a point on the path with columns:
+                       [row_index, column_index, distance_from_start, intensity_value].
+
+        Example:
+        intensity_profile_along_path(cluster_numbers=[0, 1, 3], data_multiplier=1e9) # 1e9 for representing  nm
+        """
+        rr, cc = [], []
+        if cluster_numbers == 'all':
+            points = self.clusters_coord[:,:2].astype(int)
+        elif isinstance(cluster_numbers,list):
+            if len(cluster_numbers) == 2: # strait line between two clusters
+                points = self.clusters_coord[cluster_numbers[0]:cluster_numbers[1]][:,:2].astype(int)
+            else: ## zig zag line between all clusters in the list cluster_numbers
+                points = self.clusters_coord[cluster_numbers][:,:2].astype(int)
+        else:
+            warnings.warn(f"This is not a list {cluster_numbers}") 
+        # Generate indices along the path for each segment
+        for i in range(len(points) - 1):
+            segment_rr, segment_cc = draw.line(*points[i], *points[i + 1])
+            rr.extend(segment_rr)
+            cc.extend(segment_cc)
+
+        # Clip indices to stay within image boundaries
+        rr = np.clip(rr, 0, self.data.shape[0] - 1)
+        cc = np.clip(cc, 0, self.data.shape[1] - 1)
+
+        # Extract intensity values along the path
+        intensity_profile = self.data[rr, cc]
+        dd_zero = [rr[0],cc[0]]
+        dd = [np.sqrt( ((x-dd_zero[0])*self.xreal)**2. + ((y-dd_zero[1])*self.yreal)**2.) for x,y in zip(rr,cc) ] #distance from first point just cartesian distances
+        return np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
     
     def get_peakXYdata(self):
         """
