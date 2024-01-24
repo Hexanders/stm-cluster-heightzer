@@ -76,7 +76,7 @@ class clusterpic():
         #self.heights = pd.DataFrame([])
         self.cluster_distribution = None
         self.slope_map = []
-   
+        self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
         if (self.data.shape[0] == self.data.shape[1]) == False:
             #### correct cuted images to full dimetions, so it is simple to compute all other stuff
             xmeter_per_pix = self.xreal/self.xres
@@ -298,6 +298,8 @@ class clusterpic():
                   clusters_markersize = 3,
                   clusters_markercolor = 'r',
                   font_size= 10,
+                  show_cluster_numbers = False,
+                  cl_numb_fontsize = 8
                   ):
         """
     Plots the scanning tunneling microscope (STM) data.
@@ -410,11 +412,13 @@ class clusterpic():
             ticklabs = cbar.ax.get_yticklabels()
             cbar.ax.set_yticklabels(ticklabs, fontsize=3)
             cbar.ax.set_title(r'\si{\nano\meter}', fontsize = 1, pad = 1)
-       
+        if show_cluster_numbers:
+            for i in range(0,len(self.clusters_coord)):
+                ax.annotate(i, (self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer, self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer), fontsize=cl_numb_fontsize)
             
         return ax
     
-    def intensity_profile_along_path(self, cluster_numbers = 'all', data_multiplayer = 1):
+    def intensity_profile_along_path(self, counter = 1, cluster_numbers = 'all', data_multiplayer = 1):
         """
         Generate intensity profile along a specified path.
 
@@ -437,7 +441,9 @@ class clusterpic():
             points = self.clusters_coord[:,:2].astype(int)
         elif isinstance(cluster_numbers,list):
             if len(cluster_numbers) == 2: # strait line between two clusters
-                points = self.clusters_coord[cluster_numbers[0]:cluster_numbers[1]][:,:2].astype(int)
+                points = (self.clusters_coord[cluster_numbers[0]][:2].astype(int) ,
+                          self.clusters_coord[cluster_numbers[1]][:2].astype(int)
+                          )
             else: ## zig zag line between all clusters in the list cluster_numbers
                 points = self.clusters_coord[cluster_numbers][:,:2].astype(int)
         else:
@@ -455,8 +461,42 @@ class clusterpic():
         # Extract intensity values along the path
         intensity_profile = self.data[rr, cc]
         dd_zero = [rr[0],cc[0]]
-        dd = [np.sqrt( ((x-dd_zero[0])*self.xreal)**2. + ((y-dd_zero[1])*self.yreal)**2.) for x,y in zip(rr,cc) ] #distance from first point just cartesian distances
-        return np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
+        dd = [np.sqrt( ((x-dd_zero[0])*(self.xreal/self.xres))**2. + ((y-dd_zero[1])*(self.yreal/self.yres))**2.) for x,y in zip(rr,cc) ] #distance from first point just cartesian distances
+        profiles = np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
+        self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres),'y':profiles[:,1]*(self.yreal/self.yres),'distance':profiles[:,2], 'intensity':profiles[:,3]}
+        return profiles
+    
+    def intensity_profile_along_path_multi(self, list_of_all_cluster_pairs =[], data_multiplayer = 1):
+        """
+        Generate intensity profiles along specified paths for multiple cluster pairs.
+
+        Parameters:
+        - list_of_all_cluster_pairs (list): List of cluster pairs, where each pair is represented as [cluster_index_1, cluster_index_2].
+                                            The function will generate intensity profiles for each specified pair.
+
+        - cluster_numbers (str or list): If 'all', consider all clusters. If a list, specify cluster indices.
+                                         If a list with two elements, generate a straight line between two clusters.
+                                         If a list with more than two elements, generate a zigzag line between specified clusters.
+
+        - data_multiplier (float): Multiplier to scale the intensity values.
+
+        Returns:
+        list: List containing intensity profiles for each specified pair. Each element in the list is an array containing
+              information along the path for a pair. Each row represents a point on the path with columns:
+              [row_index, column_index, distance_from_start, intensity_value].
+
+        Example:
+        intensity_profile_along_path_multi(list_of_all_cluster_pairs=[[0, 1], [2, 3]], cluster_numbers=[0, 1, 3], data_multiplier=1e9)
+        """
+        result =[]
+        counter = 0
+        if len(list_of_all_cluster_pairs)==0:
+            warnings.warn(f"Pleas provide the list of lists for extraction of paths between cluster pairs a1,a1 and a2,a2  like [[a1,a1], [a2,a2]]") 
+        else:
+            for i in list_of_all_cluster_pairs:
+                 result.append(self.intensity_profile_along_path(counter = counter, cluster_numbers = i, data_multiplayer = data_multiplayer))
+                 counter +=1
+        return result
     
     def get_peakXYdata(self):
         """
