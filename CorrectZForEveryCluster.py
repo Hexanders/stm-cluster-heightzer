@@ -75,7 +75,7 @@ class clusterpic():
         self.creat_heights_table()
         #self.heights = pd.DataFrame([])
         self.cluster_distribution = None
-        self.nearest_neighbors_sitribution = None
+        self.nearest_neighbors_ditribution = None
         self.slope_map = []
         self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
         if (self.data.shape[0] == self.data.shape[1]) == False:
@@ -461,8 +461,15 @@ class clusterpic():
 
         # Extract intensity values along the path
         intensity_profile = self.data[rr, cc]
-        dd_zero = [rr[0],cc[0]]
-        dd = np.array([np.sqrt( ((x-dd_zero[0])*(self.xreal/self.xres))**2. + ((y-dd_zero[1])*(self.yreal/self.yres))**2.) for x,y in zip(rr,cc) ]) #distance from first point just cartesian distances
+        dd_zero = [rr[0],cc[0]]#np.sqrt((rr[0]*(self.xreal/self.xres))**2. + cc[0]*(self.yreal/self.yres)**2.)# [rr[0],cc[0]]
+        dd = []
+        dsum = 0
+        for x,y in zip(rr,cc):
+            d = np.sqrt(((x-dd_zero[0])*(self.xreal/self.xres))**2. + ((y-dd_zero[1])*(self.yreal/self.yres))**2.)
+            dsum = dsum + d
+            dd.append(dsum)
+            dd_zero = [x,y]
+        dd = np.array(dd)
         profiles = np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
         self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres)*data_multiplayer,'y':profiles[:,1]*(self.yreal/self.yres)*data_multiplayer,'distance':profiles[:,2], 'intensity':profiles[:,3]}
         return profiles
@@ -1499,7 +1506,7 @@ class clusterpic():
             nearest_neighbor = points[index]
             nearest_neighbors.append(nearest_neighbor)
             nearest_neighbors_distance.append(distance)
-        self.nearest_neighbors_sitribution =  nearest_neighbors_distance
+        self.nearest_neighbors_ditribution =  np.arrray(nearest_neighbors_distance)
 
 def load_from_gwyddion(path : str) -> clusterpic: 
     """
