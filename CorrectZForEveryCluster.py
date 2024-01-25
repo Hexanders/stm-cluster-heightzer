@@ -75,6 +75,7 @@ class clusterpic():
         self.creat_heights_table()
         #self.heights = pd.DataFrame([])
         self.cluster_distribution = None
+        self.nearest_neighbors_sitribution = None
         self.slope_map = []
         self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
         if (self.data.shape[0] == self.data.shape[1]) == False:
@@ -757,11 +758,12 @@ class clusterpic():
     def calc_cluster_distribution(self):
         """
         Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
-        
+        All distances are stored in the class attribute
+        'cluster_distribution'.
+      
         Returns:
         --------
-            numpy.array:
-                distace of every pare of all clusters
+            None
         """
         # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
         #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
@@ -783,11 +785,11 @@ class clusterpic():
     def calc_nn_distribution(self):
         """
         Calculates all distances c = sqrt((a1-a2)**2 + (b1-b2)**2) from calculated cluster heigts table. So calc_true_height_4_every_region() have to be run befor
-        
+        All distances are stored in the class attribute
+        'nn_distribution'.
         Returns:
         --------
-            numpy.array:
-                distace of every pare of all clusters
+            None
         """
         # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
         #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
@@ -1472,6 +1474,33 @@ class clusterpic():
     
         fig.show()
         
+    def calc_nearest_neighbor_distribution(self):
+        """
+        Calculate the distribution of nearest neighbor distances for each cluster.
+
+        This method uses a KDTree to efficiently find the nearest neighbors for each point in the cluster.
+        The nearest neighbor distances and corresponding points are stored in the class attribute
+        'nearest_neighbors_distribution'.
+
+        Returns:
+        None
+        """
+        points = self.clusters_coord*np.array([self.xreal/self.xres,self.yreal/self.yres,1])
+        # Create a KDTree
+        tree = cKDTree(points)
+
+        # List to store nearest neighbors for each point
+        nearest_neighbors = []
+        nearest_neighbors_distance = []
+        # Loop through each point and find the nearest neighbor
+        for query_point in points:
+            distance, index = tree.query(query_point,k=2)
+            distance, index = distance[1], index[1]
+            nearest_neighbor = points[index]
+            nearest_neighbors.append(nearest_neighbor)
+            nearest_neighbors_distance.append(distance)
+        self.nearest_neighbors_sitribution =  nearest_neighbors_distance
+
 def load_from_gwyddion(path : str) -> clusterpic: 
     """
     Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
