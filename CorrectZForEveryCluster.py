@@ -1506,7 +1506,7 @@ class clusterpic():
             nearest_neighbor = points[index]
             nearest_neighbors.append(nearest_neighbor)
             nearest_neighbors_distance.append(distance)
-        self.nearest_neighbors_ditribution =  np.arrray(nearest_neighbors_distance)
+        self.nearest_neighbors_ditribution =  np.array(nearest_neighbors_distance)
 
 def load_from_gwyddion(path : str) -> clusterpic: 
     """
