@@ -1,6 +1,6 @@
 from Regions import *
 from  gwyfile import load as gwyload
-from  gwyfile.util import get_datafields 
+from  gwyfile.util import get_datafields , find_datafields
 import pickle
 import pandas as pd
 from scipy.signal import find_peaks
@@ -43,14 +43,17 @@ class clusterpic():
     """
     #import numpy as np
     def __init__(self, path = '', name ='', data = None , xres = None, yres= None ,
-                 xreal = None, yreal= None, si_unit_xy= None, si_unit_z= None):
-        self.path = path,
+                 xreal = None, yreal= None, si_unit_xy= None, si_unit_z= None, metaData = None):
+        self.path = path
         self.name = name
         self.data = data 
         self.xres = xres 
         self.yres = yres 
         self.xreal = xreal 
-        self.yreal = yreal 
+        self.yreal = yreal
+        self.metaData = metaData
+        self.currentSetPoint = None
+        self.gapVoltage = None
         try:
             self.si_unit_xy = si_unit_xy.unitstr
         except:
@@ -488,6 +491,7 @@ class clusterpic():
 
         - data_multiplier (float): Multiplier to scale the intensity values.
 
+        Data is stored in self.path_profiles attribute
         Returns:
         list: List containing intensity profiles for each specified pair. Each element in the list is an array containing
               information along the path for a pair. Each row represents a point on the path with columns:
@@ -1518,8 +1522,14 @@ def load_from_gwyddion(path : str) -> clusterpic:
     """
     obj = gwyload(path)
     channels = get_datafields(obj)
+    meta_data_dic = {v: obj[f'/{k}/meta'] for k, v in find_datafields(obj)} ## find all meta data 
     objreturn ={}
     for i in channels.keys():
+        try:
+            MetaData =  pd.DataFrame.from_dict(meta_data_dic[i], orient= 'index')
+        except Exception as e:
+            warnings.warn('No meta data found.')
+        
         objreturn[i] =  clusterpic(
                     path = path,
                     name = f'{channels[i]["xres"]}x{channels[i]["yres"]} pix {channels[i]["xreal"]:.2e}x{channels[i]["yreal"]:.2e} m',
@@ -1529,9 +1539,14 @@ def load_from_gwyddion(path : str) -> clusterpic:
                     xreal = channels[i]['xreal'],
                     yreal = channels[i]['yreal'],
                     si_unit_xy = channels[i]['si_unit_xy'],
-                    si_unit_z = channels[i]['si_unit_z']
+                    si_unit_z = channels[i]['si_unit_z'],
+                    metaData = MetaData
                 )
-        
+        try:
+            objreturn[i].currentSetPoint = float(objreturn[i].metaData.loc['EEPA:Regulator.Setpoint_1 [Ampere]'][0])
+            objreturn[i].gapVoltage = float(objreturn[i].metaData.loc['EEPA:GapVoltageControl.Voltage [Volt]'][0])
+        except Exception as e:
+            warnings.warn(f'No gapVoltage or currentSetPoint data found. Check metaData: {e}')
     return objreturn
 
 def load_from_pickle(path : str) -> clusterpic:
