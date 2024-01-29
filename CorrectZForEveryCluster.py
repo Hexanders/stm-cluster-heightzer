@@ -1522,12 +1522,17 @@ def load_from_gwyddion(path : str) -> clusterpic:
     """
     obj = gwyload(path)
     channels = get_datafields(obj)
-    meta_data_dic = {v: obj[f'/{k}/meta'] for k, v in find_datafields(obj)} ## find all meta data 
+    try:
+        meta_data_dic = {v: obj[f'/{k}/meta'] for k, v in find_datafields(obj)} ## find all meta data 
+    except Exception as e:
+        meta_data_dic = {}
+        warnings.warn('No meta data found.')
     objreturn ={}
     for i in channels.keys():
         try:
             MetaData =  pd.DataFrame.from_dict(meta_data_dic[i], orient= 'index')
         except Exception as e:
+            MetaData = None
             warnings.warn('No meta data found.')
         
         objreturn[i] =  clusterpic(
