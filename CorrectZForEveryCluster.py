@@ -463,7 +463,7 @@ class clusterpic():
         cc = np.clip(cc, 0, self.data.shape[1] - 1)
 
         # Extract intensity values along the path
-        intensity_profile = self.data[rr, cc]
+        intensity_profile = self.data[cc,rr]
         dd_zero = [rr[0],cc[0]]#np.sqrt((rr[0]*(self.xreal/self.xres))**2. + cc[0]*(self.yreal/self.yres)**2.)# [rr[0],cc[0]]
         dd = []
         dsum = 0
