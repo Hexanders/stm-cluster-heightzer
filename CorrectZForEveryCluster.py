@@ -281,6 +281,8 @@ class clusterpic():
     def show_data(self,
                   ax =None,
                   cmap = 'gray',
+                  mode = 'normal', # normal or latex
+                  latex_font = 5 , #font need to be smaller for latex because strings are longer
                   data_multiplayer = 1,
                   cbar_on = True,
                   cbar_location = 'right',
@@ -380,12 +382,13 @@ class clusterpic():
                        xmax = self.xreal*bar_space_left*data_multiplayer + bar_length*1e-9*data_multiplayer,
                        colors = bar_color,
                        linewidth = bar_size)
-    
-            ax.annotate(str(bar_length)+' '+unit,
+            latex_bar = f'\\textcolor{{{bar_color}}}{{{bar_length} {unit}}}'
+            normal_bar = f'{bar_length} {unit}'
+            ax.annotate(latex_bar if mode == 'latex'  else normal_bar,
                     (self.xreal*bar_space_left*bar_label_xshift*data_multiplayer,
                      self.yreal*bar_space_bottom*bar_label_yshift*data_multiplayer),
-                             
-                             color = bar_color)
+                             color = bar_color,
+                        fontsize = latex_font if mode == 'latex' else '', )
         
         if unit == 'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
