@@ -429,19 +429,18 @@ class clusterpic():
         """
         Generate intensity profile along a specified path.
 
-        Parameters:
-        - cluster_numbers (str or list): If 'all', consider all clusters. If a list, specify cluster indices.
-                                         If a list with two elements, generate a straight line between two clusters.
-                                         If a list with more than two elements, generate a zigzag line between specified clusters.
+        This method computes the intensity profile along a path defined by cluster indices or all clusters. It can generate a straight line between two clusters or a zigzag line between multiple specified clusters.
 
-        - data_multiplier (float): Multiplier to scale the intensity values.
+        Parameters:
+        - counter (int, optional): Counter for the profiles. Defaults to 1.
+        - cluster_numbers (str or list, optional): Defines the clusters along the path. If 'all', considers all clusters. If a list, specify cluster indices. If a list with two elements, generates a straight line between two clusters. If a list with more than two elements, generates a zigzag line between specified clusters. Defaults to 'all'.
+        - data_multiplier (float, optional): Multiplier to scale the intensity values. Defaults to 1.
 
         Returns:
-        numpy.ndarray: Array containing information along the path. Each row represents a point on the path with columns:
-                       [row_index, column_index, distance_from_start, intensity_value].
+        numpy.ndarray: A 2D array containing the profile data. Each row corresponds to a point along the path, with columns [row_indices, column_indices, distances, intensity_values].
 
         Example:
-        intensity_profile_along_path(cluster_numbers=[0, 1, 3], data_multiplier=1e9) # 1e9 for representing  nm
+        intensity_profile_along_path(counter=1, cluster_numbers=[0, 1, 3], data_multiplier=1e9) # 1e9 for representing nm
         """
         rr, cc = [], []
         if cluster_numbers == 'all':
@@ -511,7 +510,7 @@ class clusterpic():
             for i in list_of_all_cluster_pairs:
                  result.append(self.intensity_profile_along_path(counter = counter, cluster_numbers = i, data_multiplayer = data_multiplayer))
                  counter +=1
-        return result
+        
     
     def get_peakXYdata(self):
         """
