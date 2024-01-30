@@ -388,7 +388,7 @@ class clusterpic():
                     (self.xreal*bar_space_left*bar_label_xshift*data_multiplayer,
                      self.yreal*bar_space_bottom*bar_label_yshift*data_multiplayer),
                              color = bar_color,
-                        fontsize = latex_font if mode == 'latex' else '', )
+                        fontsize = latex_font if mode == 'latex' else 8, )
         
         if unit == 'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
