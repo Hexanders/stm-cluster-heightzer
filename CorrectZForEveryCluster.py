@@ -13,7 +13,8 @@ import multiprocessing
 from sklearn.neighbors import KernelDensity
 import time
 import warnings
-from skimage import draw
+# from skimage import draw        
+from skimage.draw import line       
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from decimal import Decimal
@@ -50,7 +51,7 @@ class clusterpic():
         self.xres = xres 
         self.yres = yres 
         self.xreal = xreal 
-        self.yreal = yreal
+        self.yreal = yreal 
         self.metaData = metaData
         self.currentSetPoint = None
         self.gapVoltage = None
@@ -425,7 +426,7 @@ class clusterpic():
             
         return ax
     
-    def intensity_profile_along_path(self, counter = 1, cluster_numbers = 'all', data_multiplayer = 1):
+    def intensity_profile_along_path(self, counter = 1, cluster_numbers = 'all', data_multiplier = 1):
         """
         Generate intensity profile along a specified path.
 
@@ -456,7 +457,7 @@ class clusterpic():
             warnings.warn(f"This is not a list {cluster_numbers}") 
         # Generate indices along the path for each segment
         for i in range(len(points) - 1):
-            segment_rr, segment_cc = draw.line(*points[i], *points[i + 1])
+            segment_rr, segment_cc = line(*points[i], *points[i + 1])
             rr.extend(segment_rr)
             cc.extend(segment_cc)
 
@@ -475,11 +476,13 @@ class clusterpic():
             dd.append(dsum)
             dd_zero = [x,y]
         dd = np.array(dd)
-        profiles = np.array((rr,cc,dd*data_multiplayer,intensity_profile)).T
-        self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres)*data_multiplayer,'y':profiles[:,1]*(self.yreal/self.yres)*data_multiplayer,'distance':profiles[:,2], 'intensity':profiles[:,3]}
-        return profiles
+        profiles = np.array((rr,cc,dd*data_multiplier,intensity_profile)).T
+        self.path_profiles[counter] ={'x_pix':profiles[:,0],'y_pix':profiles[:,1],'x':profiles[:,0]*(self.xreal/self.xres)*data_multiplier,'y':profiles[:,1]*(self.yreal/self.yres)*data_multiplier,'distance':profiles[:,2], 'intensity':profiles[:,3]}
+      
     
-    def intensity_profile_along_path_multi(self, list_of_all_cluster_pairs =[], data_multiplayer = 1):
+    def intensity_profile_along_path_multi(self, list_of_all_cluster_pairs =[], data_multiplier = 1,
+                                           # width=1
+                                           ):
         """
         Generate intensity profiles along specified paths for multiple cluster pairs.
 
@@ -508,7 +511,9 @@ class clusterpic():
             warnings.warn(f"Pleas provide the list of lists for extraction of paths between cluster pairs a1,a1 and a2,a2  like [[a1,a1], [a2,a2]]") 
         else:
             for i in list_of_all_cluster_pairs:
-                 result.append(self.intensity_profile_along_path(counter = counter, cluster_numbers = i, data_multiplayer = data_multiplayer))
+                 result.append(self.intensity_profile_along_path(counter = counter, cluster_numbers = i, data_multiplier = data_multiplier,
+                                                                 #width = width
+                                                                 ))
                  counter +=1
         
     
@@ -1514,7 +1519,7 @@ class clusterpic():
             nearest_neighbors_distance.append(distance)
         self.nearest_neighbors_ditribution =  np.array(nearest_neighbors_distance)
 
-def load_from_gwyddion(path : str) -> clusterpic: 
+def load_from_gwyddion(path : str, suppress_warning : bool = False) -> clusterpic: 
     """
     Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
     (so for UP, DOWN, FORWORD, BACKWARD)
@@ -1527,15 +1532,23 @@ def load_from_gwyddion(path : str) -> clusterpic:
     try:
         meta_data_dic = {v: obj[f'/{k}/meta'] for k, v in find_datafields(obj)} ## find all meta data 
     except Exception as e:
-        meta_data_dic = {}
-        warnings.warn('No meta data found.')
+        if suppress_warning:
+            meta_data_dic = {}
+            pass
+        else:
+            warnings.warn('No meta data found.')
+            meta_data_dic = {}
     objreturn ={}
     for i in channels.keys():
         try:
             MetaData =  pd.DataFrame.from_dict(meta_data_dic[i], orient= 'index')
         except Exception as e:
-            MetaData = None
-            warnings.warn('No meta data found.')
+            if suppress_warning:
+                MetaData = None
+                pass
+            else:
+                warnings.warn('No meta data found.')
+                MetaData = None
         
         objreturn[i] =  clusterpic(
                     path = path,
@@ -1553,7 +1566,10 @@ def load_from_gwyddion(path : str) -> clusterpic:
             objreturn[i].currentSetPoint = float(objreturn[i].metaData.loc['EEPA:Regulator.Setpoint_1 [Ampere]'][0])
             objreturn[i].gapVoltage = float(objreturn[i].metaData.loc['EEPA:GapVoltageControl.Voltage [Volt]'][0])
         except Exception as e:
-            warnings.warn(f'No gapVoltage or currentSetPoint data found. Check metaData: {e}')
+            if suppress_warning:
+                pass
+            else:
+                warnings.warn(f'No gapVoltage or currentSetPoint data found. Check metaData: {e}')
     return objreturn
 
 def load_from_pickle(path : str) -> clusterpic:
