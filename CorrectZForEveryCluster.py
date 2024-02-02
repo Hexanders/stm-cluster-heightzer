@@ -248,7 +248,7 @@ class clusterpic():
         if axes == 'rows' or axes == 'both':
             counter = 0
             for i in self.data: # iterate row by row
-                xpeaks = find_peaks(i,height=height, distance=distance, prominence=(prominence,))[0]
+                xpeaks = find_peaks(i,height=height, distance=distance, prominence=prominence)[0]
                 zpeaks = i[xpeaks] 
                 max_dic_columns[counter] = {x:z for x,z in zip(xpeaks,zpeaks)}
                 counter +=1 
@@ -261,7 +261,7 @@ class clusterpic():
         if axes == 'columns' or axes == 'both':
             counter = 0
             for i in self.data.T: # iterate column by column
-                xpeaks = find_peaks(i,  height=height, distance=distance, prominence=(prominence,))[0]
+                xpeaks = find_peaks(i,  height=height, distance=distance, prominence=prominence)[0]
                 zpeaks = i[xpeaks] 
                 max_dic_columns[counter] = {x:z for x,z in zip(xpeaks,zpeaks)}
                 counter +=1 
