@@ -1279,7 +1279,7 @@ class clusterpic():
             return_bining (bool): Flag to return histogram binning data (default False).
 
         Returns:
-            None or tuple: If return_bining is True, returns a tuple containing histogram binning data.
+            None or dict: If return_bining is True, returns a dictionary containing histogram binning data.
 
         Note:
             This function generates a 2x2 subplot with histograms and kernel density plots for the corrected heights
@@ -1491,7 +1491,12 @@ class clusterpic():
         fig['layout']['xaxis4']['tickformat']= 'e'
     
         fig.show()
-        
+        if return_bining:
+            return {
+                'corrected_Z_averaged': binning,
+                'corrected_Z_closest_step': binning2,
+                'corrected_Z_highest_step' : binning3
+            } 
     def calc_nearest_neighbor_distribution(self):
         """
         Calculate the distribution of nearest neighbor distances for each cluster.
