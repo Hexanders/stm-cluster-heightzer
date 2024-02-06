@@ -47,7 +47,7 @@ class clusterpic():
                  xreal = None, yreal= None, si_unit_xy= None, si_unit_z= None, metaData = None):
         self.path = path
         self.name = name
-        self.data = data 
+        self.data = pd.DataFrame(data).dropna().to_numpy() ### Temporary fix for the data wich was drift corrected 
         self.xres = xres 
         self.yres = yres 
         self.xreal = xreal 
@@ -82,12 +82,14 @@ class clusterpic():
         self.nearest_neighbors_ditribution = None
         self.slope_map = []
         self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
+        
         if (self.data.shape[0] == self.data.shape[1]) == False:
+            print(self.data.shape)
             #### correct cuted images to full dimetions, so it is simple to compute all other stuff
             xmeter_per_pix = self.xreal/self.xres
             ymeter_per_pix = self.yreal/self.yres
             dataFr = pd.DataFrame(self.data)
-            self.data = dataFr.reindex(index=list(dataFr.columns)).to_numpy()
+            #self.data = dataFr.reindex(index=list(dataFr.columns)).to_numpy() ### I am not shure why reindexiing hier but this cause problems with drift corected images, comment out  for now
             self.yres = self.data.shape[0]
             self.xres = self.data.shape[1]
             self.yreal = ymeter_per_pix*self.data.shape[0]
