@@ -1526,7 +1526,7 @@ class clusterpic():
             nearest_neighbors_distance.append(distance)
         self.nearest_neighbors_ditribution =  np.array(nearest_neighbors_distance)
 
-def load_from_gwyddion(path : str, suppress_warning : bool = False) -> clusterpic: 
+def load_from_gwyddion(path : str, suppress_warning : bool = True) -> clusterpic: 
     """
     Creats list of objects from Gwyddion file by appling of clusterpic() for every pciture in gwyddion file 
     (so for UP, DOWN, FORWORD, BACKWARD)
@@ -1536,15 +1536,19 @@ def load_from_gwyddion(path : str, suppress_warning : bool = False) -> clusterpi
     """
     obj = gwyload(path)
     channels = get_datafields(obj)
-    try:
-        meta_data_dic = {v: obj[f'/{k}/meta'] for k, v in find_datafields(obj)} ## find all meta data 
-    except Exception as e:
-        if suppress_warning:
-            meta_data_dic = {}
-            pass
-        else:
-            warnings.warn('No meta data found.')
-            meta_data_dic = {}
+    meta_data_dic = {}
+    for k, v in find_datafields(obj):
+        try:
+            meta_data_dic[v] =  obj[f'/{k}/meta']  ## find all meta data 
+        except Exception as e:
+            if suppress_warning:
+                meta_data_dic[v] ='None'
+                pass
+            else:
+                warnings.warn('No meta data found.')
+                logging.error(traceback.format_exc())
+                meta_data_dic[v]='None'
+                pass
     objreturn ={}
     for i in channels.keys():
         try:
