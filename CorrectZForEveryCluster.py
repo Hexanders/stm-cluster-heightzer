@@ -304,9 +304,13 @@ class clusterpic():
                   unit = 'nm',
                   no_ticks =False,
                   show_clusters = False,
+                  show_regions = False,
                   clusters_markersize = 3,
                   clusters_markercolor = 'r',
                   font_size= 10,
+                  window_face_color = 'red', ## color of the square regions
+                  rim_color = 'black', ## color of the edges of square regions
+                  alpha = 0.5, ## transparency of the regions
                   show_cluster_numbers = False,
                   cl_numb_fontsize = 8
                   ):
@@ -377,7 +381,20 @@ class clusterpic():
                 ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer,
                     self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer,
                         'o', c = clusters_markercolor, ms = clusters_markersize)
-            
+        if show_regions:
+            if self.regions:
+                for i in self.regions:
+                    if i.region_type == 'voronoi':
+                        vor = Voronoi( np.vstack((self.clusters_coord[:,0]*(self.xreal/self.xres)*data_multiplayer,
+                                                  self.clusters_coord[:,1]*(self.yreal/self.yres)*data_multiplayer)).T, qhull_options='Qbb Qc Qx')
+                        voronoi_plot_2d(vor, ax = ax, show_points = False)
+                        break
+                    elif 'rectangular' in i.region_type:
+                        x_min , x_max, y_min, y_max =min(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplayer, max(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplayer, min(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplayer, max(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplayer
+                        rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=window_face_color,ec=rim_color, alpha = alpha)
+                        ax.add_patch(rectangle)
+                ax.set_xlim(0,self.xreal*data_multiplayer) ### reset limit of x,y because Voroni diagram exceeds thous limits
+                ax.set_ylim(0,self.yreal*data_multiplayer)
         if bar:
             ax.hlines(self.yreal*bar_space_bottom*data_multiplayer,
                        #1E-8,
@@ -1574,8 +1591,8 @@ def load_from_gwyddion(path : str, suppress_warning : bool = True) -> clusterpic
                     metaData = MetaData
                 )
         try:
-            objreturn[i].currentSetPoint = float(objreturn[i].metaData.loc['EEPA:Regulator.Setpoint_1 [Ampere]'][0])
-            objreturn[i].gapVoltage = float(objreturn[i].metaData.loc['EEPA:GapVoltageControl.Voltage [Volt]'][0])
+            objreturn[i].currentSetPoint = float(objreturn[i].metaData.loc['PMOD:Regulator.Setpoint_1 [Ampere]'][0])
+            objreturn[i].gapVoltage = float(objreturn[i].metaData.loc['PMOD:GapVoltageControl.Voltage [Volt]'][0])
         except Exception as e:
             if suppress_warning:
                 pass
