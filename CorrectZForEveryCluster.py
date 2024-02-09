@@ -84,7 +84,7 @@ class clusterpic():
         self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
         
         if (self.data.shape[0] == self.data.shape[1]) == False:
-            print(self.data.shape)
+            #print(self.data.shape)
             #### correct cuted images to full dimetions, so it is simple to compute all other stuff
             xmeter_per_pix = self.xreal/self.xres
             ymeter_per_pix = self.yreal/self.yres
@@ -286,11 +286,14 @@ class clusterpic():
                   cmap = 'gray',
                   mode = 'normal', # normal or latex
                   latex_font = 5 , #font need to be smaller for latex because strings are longer
-                  data_multiplayer = 1,
+                  data_multiplier = 1,
                   cbar_on = True,
                   cbar_location = 'right',
                   cbar_fraction = 0.04740,
                   cbar_pad =  0.004,
+                  cbar_diggi = 1, # how many digits after comma in cbar ticks
+                  cbar_tick_spacing = False,#set_tick_spacing
+                  cbar_ticks_labelsize = 5,
                   bar = True,
                   bar_space_left = 0.05, # space in % from hole range
                   bar_space_bottom = 0.95,# space in % from hole range
@@ -350,63 +353,63 @@ class clusterpic():
         if not ax:
             fig, ax = plt.subplots()
         plt.rcParams.update({'font.size': font_size})
-        multiplayer = 1
+        multiplier = 1
         if not bar_length:
             match unit:
                 case '$\AA$':
-                    multiplayer = 1e10
+                    multiplier = 1e10
                 case 'nm':
-                    multiplayer = 1e9
+                    multiplier = 1e9
                 case '$\mu$m':
-                    multiplayer = 1e6
+                    multiplier = 1e6
                     
-            bar_length = round(self.xreal*0.1*multiplayer)
+            bar_length = round(self.xreal*0.1*multiplier)
         if mask:
             for mski in mask:
-                in_your_face =  masked_outside(self.data*data_multiplayer,mski[0],mski[1])
+                in_your_face =  masked_outside(self.data*data_multiplier,mski[0],mski[1])
                 im = ax.imshow(in_your_face,
                                cmap=cmap,
                                 interpolation = None,
-                               extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                               extent =[0, self.xreal*data_multiplier, self.yreal*data_multiplier, 0]
                                )
         else:
-            im = ax.imshow(self.data*data_multiplayer,
+            im = ax.imshow(self.data*data_multiplier,
                            cmap = cmap,
                            #origin = 'lower',
                            interpolation = None,
-                           extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                           extent =[0, self.xreal*data_multiplier, self.yreal*data_multiplier, 0]
                            )
         if show_clusters:
             for i in range(0,len(self.clusters_coord)):
-                ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer,
-                    self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer,
+                ax.plot(self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplier,
+                    self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplier,
                         'o', c = clusters_markercolor, ms = clusters_markersize)
         if show_regions:
             if self.regions:
                 for i in self.regions:
                     if i.region_type == 'voronoi':
-                        vor = Voronoi( np.vstack((self.clusters_coord[:,0]*(self.xreal/self.xres)*data_multiplayer,
-                                                  self.clusters_coord[:,1]*(self.yreal/self.yres)*data_multiplayer)).T, qhull_options='Qbb Qc Qx')
+                        vor = Voronoi( np.vstack((self.clusters_coord[:,0]*(self.xreal/self.xres)*data_multiplier,
+                                                  self.clusters_coord[:,1]*(self.yreal/self.yres)*data_multiplier)).T, qhull_options='Qbb Qc Qx')
                         voronoi_plot_2d(vor, ax = ax, show_points = False)
                         break
                     elif 'rectangular' in i.region_type:
-                        x_min , x_max, y_min, y_max =min(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplayer, max(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplayer, min(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplayer, max(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplayer
+                        x_min , x_max, y_min, y_max =min(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplier, max(i.coordinates[:,0])*(self.xreal/self.xres)*data_multiplier, min(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplier, max(i.coordinates[:,1])*(self.yreal/self.yres)*data_multiplier
                         rectangle = plt.Rectangle((x_min,y_min), x_max - x_min, y_max - y_min, fc=window_face_color,ec=rim_color, alpha = alpha)
                         ax.add_patch(rectangle)
-                ax.set_xlim(0,self.xreal*data_multiplayer) ### reset limit of x,y because Voroni diagram exceeds thous limits
-                ax.set_ylim(0,self.yreal*data_multiplayer)
+                ax.set_xlim(0,self.xreal*data_multiplier) ### reset limit of x,y because Voroni diagram exceeds thous limits
+                ax.set_ylim(self.yreal*data_multiplier,0)
         if bar:
-            ax.hlines(self.yreal*bar_space_bottom*data_multiplayer,
+            ax.hlines(self.yreal*bar_space_bottom*data_multiplier,
                        #1E-8,
-                       xmin= self.xreal*bar_space_left*data_multiplayer,
-                       xmax = self.xreal*bar_space_left*data_multiplayer + bar_length*1e-9*data_multiplayer,
+                       xmin= self.xreal*bar_space_left*data_multiplier,
+                       xmax = self.xreal*bar_space_left*data_multiplier + bar_length*1e-9*data_multiplier,
                        colors = bar_color,
                        linewidth = bar_size)
             latex_bar = f'\\textcolor{{{bar_color}}}{{{bar_length} {unit}}}'
             normal_bar = f'{bar_length} {unit}'
             ax.annotate(latex_bar if mode == 'latex'  else normal_bar,
-                    (self.xreal*bar_space_left*bar_label_xshift*data_multiplayer,
-                     self.yreal*bar_space_bottom*bar_label_yshift*data_multiplayer),
+                    (self.xreal*bar_space_left*bar_label_xshift*data_multiplier,
+                     self.yreal*bar_space_bottom*bar_label_yshift*data_multiplier),
                              color = bar_color,
                         fontsize = latex_font if mode == 'latex' else 8, )
         
@@ -432,16 +435,20 @@ class clusterpic():
             cbar = plt.colorbar(mappable= im, fraction=cbar_fraction, pad=cbar_pad, location = cbar_location)
             tick_locator = ticker.MaxNLocator(nbins=9)
             cbar.locator = tick_locator
-            cbar.ax.tick_params(direction = 'out')
+            cbar.ax.tick_params(axis = 'y', which = 'both', direction = 'out', labelsize=cbar_ticks_labelsize)
             cbar.update_ticks()
-            cbar.ax.set_xticks(cbar.ax.get_xticks()) ## strange avoding of error
-            cbar.ax.set_yticks(cbar.ax.get_yticks())
-            ticklabs = cbar.ax.get_yticklabels()
-            cbar.ax.set_yticklabels(ticklabs, fontsize=3)
+            #### [START]this creats a white space in cbar!!!
+            #cbar.ax.set_xticks(cbar.ax.get_xticks()) ## strange avoding of error
+            #cbar.ax.set_yticks(cbar.ax.get_yticks())
+            #ticklabs = cbar.ax.get_yticklabels()
+            #cbar.ax.set_yticklabels(ticklabs, fontsize=3)
+            #### [END]this creats a white space in cbar!!!
+            cbar.ax.yaxis.set_major_formatter(f'{{x:1.{cbar_diggi}f}}')
             cbar.ax.set_title(r'\si{\nano\meter}', fontsize = 1, pad = 1)
+            if cbar_tick_spacing: set_tick_spacing(cbar.ax, axes = 'y', major_spac = cbar_tick_spacing[0], minor_space =  cbar_tick_spacing[1])
         if show_cluster_numbers:
             for i in range(0,len(self.clusters_coord)):
-                ax.annotate(i, (self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplayer, self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplayer), fontsize=cl_numb_fontsize)
+                ax.annotate(i, (self.clusters_coord[:,0][i]*(self.xreal/self.xres)*data_multiplier, self.clusters_coord[:,1][i]*(self.yreal/self.yres)*data_multiplier), fontsize=cl_numb_fontsize)
             
         return ax
     
@@ -1110,7 +1117,7 @@ class clusterpic():
                        pixelRange = 2,
                        pikerRange = 10,
                        mask =None,
-                       data_multiplayer = 1,
+                       data_multiplier = 1,
                        cmap = 'grey',
                        show_regions = False,
                        face_color = 'red',
@@ -1153,18 +1160,18 @@ class clusterpic():
         #ax.imshow(self.data)
         if mask:
             for mski in mask:
-                in_your_face =  masked_outside(self.data*data_multiplayer,mski[0],mski[1])
+                in_your_face =  masked_outside(self.data*data_multiplier,mski[0],mski[1])
                 im = ax.imshow(in_your_face,
                                cmap=cmap,
                                 interpolation = None,
-                               #extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                               #extent =[0, self.xreal*data_multiplier, self.yreal*data_multiplier, 0]
                                )
         else:
-            im = ax.imshow(self.data*data_multiplayer,
+            im = ax.imshow(self.data*data_multiplier,
                            cmap = cmap,
                            #origin = 'lower',
                            interpolation = None,
-                           #extent =[0, self.xreal*data_multiplayer, self.yreal*data_multiplayer, 0]
+                           #extent =[0, self.xreal*data_multiplier, self.yreal*data_multiplier, 0]
                            )
         
         pickable_artists = []
@@ -1600,6 +1607,55 @@ def load_from_gwyddion(path : str, suppress_warning : bool = True) -> clusterpic
                 warnings.warn(f'No gapVoltage or currentSetPoint data found. Check metaData: {e}')
     return objreturn
 
+def set_tick_spacing(ax, axes= "x", major_spac = 1, minor_space = 1):
+    """
+    Set the tick spacing for the specified axes on the given Matplotlib Axes.
+
+    Parameters:
+    - ax (matplotlib.axes._axes.Axes): The Matplotlib Axes object.
+    - axes (str): Specifies the axes for which tick spacing should be set. 
+                  Valid values are "both", "x", or "y".
+    - major_spac (float or list of floats): The base spacing for major ticks.
+    - minor_space (float or list of floats): The base spacing for minor ticks.
+
+    Returns:
+    - None: Tick spacing is set on the provided Axes object.
+
+    Note:
+    - If 'axes' is set to "both", 'major_spac' and 'minor_space' should be lists 
+      with two elements, one for the x-axis and one for the y-axis.
+    - If 'axes' is set to "x" or "y", 'major_spac' and 'minor_space' should be 
+      single values representing the spacing for the respective axis.
+    - If 'axes' is an invalid value, the function returns a string indicating 
+      the allowed values for 'axes'.
+    """
+    if axes == "both":
+        if not isinstance(major_spac, list):
+            major_spac = [major_spac,major_spac]
+        if not isinstance(minor_space,list):
+            minor_space = [minor_space,minor_space]
+        
+        loc = ticker.MultipleLocator(base=major_spac[0]) # this locator puts ticks at regular intervals
+        loc2 = ticker.MultipleLocator(base=minor_space[0])
+        ax.xaxis.set_major_locator(loc)
+        ax.xaxis.set_minor_locator(loc2)
+        loc = ticker.MultipleLocator(base=major_spac[1]) # this locator puts ticks at regular intervals
+        loc2 = ticker.MultipleLocator(base=minor_space[1])
+        ax.yaxis.set_major_locator(loc)
+        ax.yaxis.set_minor_locator(loc2)
+    elif axes == "x":
+        loc = ticker.MultipleLocator(base=major_spac) # this locator puts ticks at regular intervals
+        loc2 = ticker.MultipleLocator(base=minor_space)
+        ax.xaxis.set_major_locator(loc)
+        ax.xaxis.set_minor_locator(loc2)
+    elif axes == "y":
+        loc = ticker.MultipleLocator(base=major_spac) # this locator puts ticks at regular intervals
+        loc2 = ticker.MultipleLocator(base=minor_space)
+        ax.yaxis.set_major_locator(loc)
+        ax.yaxis.set_minor_locator(loc2)
+    else:
+        return "Only axes ='both', 'x' or 'y' are allowed."
+    
 def load_from_pickle(path : str) -> clusterpic:
     """
     Loads saved clusterpic object frome pickle file in path
