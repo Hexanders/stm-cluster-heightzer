@@ -287,18 +287,19 @@ class region():
             counter +=1
         ax4.scatter(self.cluster_peak_coordinates[0],
                         self.cluster_peak_coordinates[1],  
-                        marker = 'x', 
+                        marker = '*', 
                         label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         if (not self.cluster_peak_coordinates[2]) or (not self.true_hight) or (not self.true_hight_closest_ground_level) or (not self.true_hight_heighest_ground_level):
             fig.suptitle(f'Region Nr: {self.region_id}')
         else:
-            fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h_average:%s, h_closest: %s, h_heighest: %s' %
+            fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h_average:%s, h_closest: %s, h_highest: %s, h_lowest: %s' %
                                                                 ('{:0.3e}'.format(self.cluster_peak_coordinates[2]), 
                                                                  '{:0.3e}'.format(self.true_hight),
                                                                  
                                                                 '{:0.3e}'.format(self.true_hight_closest_ground_level),
                                                                 '{:0.3e}'.format(self.true_hight_heighest_ground_level),
+                                                                 '{:0.3e}'.format(self.true_hight_lowest_ground_level),
                                                                  
                                                                 ))
         plt.tight_layout()
