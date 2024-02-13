@@ -1244,7 +1244,7 @@ class clusterpic():
 
         """
         toProzess_t = self.clusters_coord
-        print(toProzess_t)
+        #print(toProzess_t)
         def delete_multiple_element(list_object, indices):
             indices = sorted(indices, reverse=True)
             for idx in indices:
@@ -1252,6 +1252,7 @@ class clusterpic():
                     list_object.pop(idx)
         indexes_to_delet = []            
         for index, row in toProzess.iterrows():
+            print(index, row)
             if (row[0] >= self.xres-deltPix) or  (row[1] >= self.yres-deltPix): 
                 #print(index,row['x'], row['y'])
                 indexes_to_delet.append(index)
@@ -1386,37 +1387,44 @@ class clusterpic():
         
         bar_data = [
             go.Bar(y = binning[0],x=binning[1],
-                   name ='Distribution average',
+                   name ='Average',
+                   legendgroup="group",  # this can be any string, not just "group"
+                   legendgrouptitle_text="Distribution",
                    marker_color= color_average,
                    offsetgroup=1),
             
             go.Bar(y = binning2[0],
-                   x=binning2[1], 
-                   name ='Distribution closest step',
+                   x=binning2[1],
+                   legendgroup="group", 
+                   name ='Closest step',
                    marker_color= color_closest_step,
                    offsetgroup=2,
                    opacity = 0.8
                   ),
             
             go.Bar(y = binning3[0],
-                   x=binning3[1], 
-                   name ='Distribution highest step',
+                   x=binning3[1],
+                   legendgroup="group", 
+                   name ='Highest step',
                    marker_color= color_highest_step,
                    offsetgroup=2,
                    opacity = 0.8
                    ),
             go.Bar(y = binning4[0],
-                   x=binning4[1], 
-                   name ='Distribution lowest step',
+                   x=binning4[1],
+                   legendgroup="group", 
+                   name ='Lowest step',
                    marker_color= color_lowest_step,
                    offsetgroup=2,
                    opacity = 0.8
                   )
         ]
-        fig.add_traces(bar_data, rows=1, cols=1)
+        fig.add_traces(bar_data,
+                       rows=1, cols=1)
         fig.update_layout(barmode='overlay',
                           bargap=0.0,
                           # bargroupgap=0.0
+                          legend=dict(groupclick="toggleitem")
                          )
         KernalPlot = self.heights['corrected_Z_averaged'].to_numpy()
         X_plot = KernalPlot[:, np.newaxis]
@@ -1455,28 +1463,33 @@ class clusterpic():
                                    y=np.exp(log_dens),
                                    mode='markers',
                                    marker_color= color_average,
-                                   name ='Kernel Density averaged'),
+                                   legendgroup="group2",
+                                   legendgrouptitle_text="Kernel Density",
+                                   name ='Averaged'),
                       row=2, col=1)
         fig.add_trace(go.Scattergl(x=X_plot2[:, 0],
                                    y=np.exp(log_dens2),
                                    mode='markers',
                                    marker= dict(color = color_closest_step,
                                                opacity = 0.8),
-                                   name ='Kernel Density closest step'),
+                                   legendgroup="group2",
+                                   name ='Closest step'),
                       row=2, col=1)
         fig.add_trace(go.Scattergl(x=X_plot3[:, 0],
                                    y=np.exp(log_dens3),
                                    mode='markers',
                                    marker= dict(color = color_highest_step,
                                                opacity = 0.8),
-                                   name ='Kernel Density highest step'),
+                                   legendgroup="group2",
+                                   name ='Highest step'),
                       row=2, col=1)
         fig.add_trace(go.Scattergl(x=X_plot4[:, 0],
                                    y=np.exp(log_dens4),
                                    mode='markers',
                                    marker= dict(color = color_lowest_step,
                                                opacity = 0.8),
-                                   name ='Kernel Density lowest step'),
+                                   legendgroup="group2",
+                                   name ='Lowest step'),
                       row=2, col=1)
         
         text = [f'Nr: {string1}<br>z_average: {Decimal(string2):.3E}' for string1, string2 in zip(self.heights.index.values, self.heights['corrected_Z_averaged'])]
@@ -1485,6 +1498,8 @@ class clusterpic():
                                    y = deviation, 
                                    # text = self.heights.index.values,
                                    text = text,
+                                   legendgroup="group3",
+                                    legendgrouptitle_text = 'Deviation from initial Z',
                                    hoverinfo = 'text', 
                                    name = 'average', 
                                    mode = 'markers',
@@ -1499,7 +1514,8 @@ class clusterpic():
                                    y= deviation2, 
                                    # text = self.heights.index.values,
                                    text = text2,
-                                   hoverinfo = 'text', 
+                                   hoverinfo = 'text',
+                                    legendgroup="group3",
                                    name = 'closest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_closest_step,
@@ -1514,7 +1530,8 @@ class clusterpic():
                                    y= deviation3, 
                                    # text = self.heights.index.values,
                                    text = text4,
-                                   hoverinfo = 'text', 
+                                   hoverinfo = 'text',
+                                    legendgroup="group3",
                                    name = 'highest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_highest_step,
@@ -1530,7 +1547,8 @@ class clusterpic():
                                    # text = self.heights.index.values,
                                    text = text44,
                                    hoverinfo = 'text', 
-                                   name = 'lowest step', 
+                                   name = 'lowest step',
+                                    legendgroup="group3",
                                    mode = 'markers',
                                    marker = dict(color = color_lowest_step,
                                                  symbol = 'arrow-up',
@@ -1545,8 +1563,10 @@ class clusterpic():
                                    y = self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_closest_step'], 
                                     # text = self.heights.index.values,
                                     text = text3,
-                                   hoverinfo = 'text', 
-                                   name = 'average - closest step', 
+                                   hoverinfo = 'text',
+                                   legendgroup="group4",
+                                   legendgrouptitle_text ="Deviation from average ground level",  
+                                   name = 'Closest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_closest_step,
                                                  #symbol = 'star',
@@ -1564,8 +1584,9 @@ class clusterpic():
                                    y = self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_highest_step'], 
                                     # text = self.heights.index.values,
                                     text = text5,
-                                   hoverinfo = 'text', 
-                                   name = 'average - highest step', 
+                                   hoverinfo = 'text',
+                                   legendgroup="group4",
+                                   name = 'Highest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_highest_step,
                                                  symbol = 'arrow-down',
@@ -1578,8 +1599,9 @@ class clusterpic():
                                    y = self.heights['corrected_Z_averaged'] - self.heights['corrected_Z_lowest_step'], 
                                     # text = self.heights.index.values,
                                     text = text6,
-                                   hoverinfo = 'text', 
-                                   name = 'average - lowest step', 
+                                   hoverinfo = 'text',
+                                   legendgroup="group4",
+                                   name = 'Lowest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_lowest_step,
                                                  symbol = 'arrow-up',
@@ -1764,7 +1786,7 @@ def del_edge_clusters_by_pix(toProzess: clusterpic, deltPix: int = 0 ):
         
     """
     toProzess_t = toProzess.heights.T
-    print(toProzess_t)
+    #print(toProzess_t)
     def delete_multiple_element(list_object, indices):
         indices = sorted(indices, reverse=True)
         for idx in indices:
