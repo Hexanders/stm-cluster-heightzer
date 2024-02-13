@@ -1350,10 +1350,10 @@ class clusterpic():
                             horizontal_spacing = 0.15,
                             vertical_spacing = 0.15,
                             subplot_titles = (f"Heights with bins #={bins}",
-                                             "",
+                                             "Distribution",
                                             
-                                              f"Kernel Density\n with bandwidth {bandwidth}",
-                                             ""
+                                              f"Kernel Density {bandwidth}",
+                                             "Deviation from average"
                                             ))
 
         fig.update_layout(
@@ -1499,7 +1499,7 @@ class clusterpic():
                                    # text = self.heights.index.values,
                                    text = text,
                                    legendgroup="group3",
-                                    legendgrouptitle_text = 'Deviation from initial Z',
+                                    legendgrouptitle_text = 'Deviation from<br> initial Z',
                                    hoverinfo = 'text', 
                                    name = 'average', 
                                    mode = 'markers',
@@ -1565,7 +1565,7 @@ class clusterpic():
                                     text = text3,
                                    hoverinfo = 'text',
                                    legendgroup="group4",
-                                   legendgrouptitle_text ="Deviation from average ground level",  
+                                   legendgrouptitle_text ="Deviation from <br>average ground level",  
                                    name = 'Closest step', 
                                    mode = 'markers',
                                    marker = dict(color = color_closest_step,
