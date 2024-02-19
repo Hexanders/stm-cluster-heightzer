@@ -1830,3 +1830,37 @@ def combine_heights(name:str = '', input_path: str = '', input_list: list = None
     blup.heights = result
     blup.area = result_area
     return blup
+
+def sigma_threshold(nnn_array, threshold = 0.9, step_width = 1000):
+    """
+    Calculate the threshold sigma value.
+
+    This function calculates the value sigma_th where a specified percentage 
+    (given by the threshold parameter) of items in the array are greater than 
+    sigma_th.
+
+    Args:
+        nnn_array (array-like): The input array.
+        threshold (float, optional): The percentage of items in the array that 
+            must be greater than sigma_th. It ranges from 0 to 1, where 0.9 
+            means 90% (default is 0.9).
+        step_width (int, optional): The number of steps to consider between 
+            the minimum and maximum values of the array (default is 1000).
+
+    Returns:
+        float or None: The threshold sigma value. Returns None if the threshold 
+        condition is not met within the range of the array.
+
+    """
+    nnn_min, nnn_max = nnn_array.min(), nnn_array.max()
+    step = abs(nnn_max - nnn_min)/step_width
+    threshold = 1-threshold
+    current_step = nnn_min
+    sigma_th = None
+    while (current_step < nnn_max):
+        current_treshold = (nnn_array < current_step).sum()
+        if (current_treshold/len(nnn_array)) >= threshold:
+            sigma_th = current_step
+            break
+        current_step += step
+    return sigma_th
