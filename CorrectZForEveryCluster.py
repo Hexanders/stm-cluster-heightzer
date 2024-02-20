@@ -1655,6 +1655,7 @@ class clusterpic():
         # Loop through each point and find the nearest neighbor
         for query_point in points:
             distance, index = tree.query(query_point,k=2)
+            #print(distance, index)
             distance, index = distance[1], index[1]
             nearest_neighbor = points[index]
             nearest_neighbors.append(nearest_neighbor)
@@ -1695,7 +1696,10 @@ def load_from_gwyddion(path : str, suppress_warning : bool = True) -> clusterpic
             else:
                 warnings.warn('No meta data found.')
                 MetaData = None
-        
+        try:
+            si_unit_z = channels[i]['si_unit_z']#some times is mask set this data is not available
+        except Exception as e:
+            si_unit_z = None,
         objreturn[i] =  clusterpic(
                     path = path,
                     name = f'{channels[i]["xres"]}x{channels[i]["yres"]} pix {channels[i]["xreal"]:.2e}x{channels[i]["yreal"]:.2e} m',
@@ -1705,7 +1709,7 @@ def load_from_gwyddion(path : str, suppress_warning : bool = True) -> clusterpic
                     xreal = channels[i]['xreal'],
                     yreal = channels[i]['yreal'],
                     si_unit_xy = channels[i]['si_unit_xy'],
-                    si_unit_z = channels[i]['si_unit_z'],
+                    si_unit_z = si_unit_z,
                     metaData = MetaData
                 )
         try:
