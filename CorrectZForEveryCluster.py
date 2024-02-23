@@ -203,15 +203,13 @@ class clusterpic():
 
         """
         new_clusters_coord = []
-        trigger = False
         for nr, i in enumerate(self.clusters_coord):
             heyho = self.walk_to_the_extrema(self.data, [int(i[0]), int(i[1]), i[2]],  extrema = extrema,  pixelRange=pixelRange)[0]
             new_clusters_coord.append(heyho)
             if heyho != [int(i[0]), int(i[1]), i[2]]:
                 print(f'{nr}:{[int(i[0]), int(i[1]), i[2]]} -> {heyho}:diff: {np.array(i)-np.array(heyho)}')
-                trigger = True
-        if trigger:
-            self.clusters_coord = np.array(new_clusters_coord)
+        self.clusters_coord = np.array(new_clusters_coord)
+        #return np.array(new_clusters_coord)
         
     def walk_to_the_extrema(self,test_data, xyz_current_max, extrema = 'max', pixelRange = 2):
         """
@@ -228,36 +226,39 @@ class clusterpic():
         suspect = xyz_current_max#[1],xyz_current_max[0], xyz_current_max[2]
         step_counter = 0
         while no_new_extrema_found:
-            
             step_counter +=1
-            y_range = [suspect[0]-pixelRange, suspect[0]+pixelRange]
+            y_range = [suspect[1]-pixelRange, suspect[1]+pixelRange]
             if y_range[0] < 0:y_range[0] = 0 # if you hit the boundaries important for correction later see maxXX
             if y_range[1] > test_data.shape[0] : y_range[1] = test_data.shape[0] # if you hit the boundaries 
-            x_range = [suspect[1]-pixelRange, suspect[1]+pixelRange] # if you hit the boundaries
+            x_range = [suspect[0]-pixelRange, suspect[0]+pixelRange] # if you hit the boundaries
             if x_range[0] < 0 : x_range[0] = 0  # if you hit the boundaries
             if x_range[1] > test_data.shape[1] : x_range[1] = test_data.shape[1] # if you hit the boundaries
 
-            aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
+            #aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
             #print(test_data.shape,x_range[0],x_range[1],y_range[0],y_range[1])
-            #aslice = test_data[y_range[0]:y_range[1],x_range[0]:x_range[1]]
+            aslice = test_data[y_range[0]:y_range[1],x_range[0]:x_range[1]]
+            
             if extrema == 'min':
-                extremaX, extremaY = np.unravel_index(aslice.argmin(), aslice.shape) ## finde maximum ids in 2d array slice
+                extremaY, extremaX = np.unravel_index(aslice.argmin(), aslice.shape) ## finde maximum ids in 2d array slice
             else:
-                extremaX, extremaY = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
+                # print(y_range, x_range)
+                # print(aslice)
+                extremaY, extremaX = np.unravel_index(aslice.argmax(), aslice.shape) ## finde maximum ids in 2d array slice
+               
             extremaXX, extremaYY = extremaX+x_range[0], extremaY+y_range[0] ## correct for the actual array, so not the slice
             #self.tmp.append([aslice.max() ,suspect])
             if np.isnan(suspect[2]): ### some times it is just nan, no idea why. This is not very good fix but it works
                 suspect[2] = 0.0
             if extrema == 'min':
                 if aslice.min() < suspect[2]:
-                    suspect = [extremaYY, extremaXX, aslice.min() ]
+                    suspect = [extremaXX, extremaYY, aslice.min() ]
                 
                     #no_new_max_found = False
                 else:
                     no_new_extrema_found = False
             else:
                 if aslice.max() > suspect[2]:
-                    suspect = [extremaYY, extremaXX, aslice.max() ]
+                    suspect = [extremaXX, extremaYY, aslice.max() ]
                 
                     #no_new_max_found = False
                 else:
@@ -720,7 +721,7 @@ class clusterpic():
         self.clusters_coord = clusters_coord
         
         
-    def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False, extrema = 'max'):
+    def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False, pixelRange = 2, extrema = 'max'):
         """
         Updates the list of clusters withch was peakt by cluster_peaker() or by given list xyz
         Parameters:
@@ -732,8 +733,10 @@ class clusterpic():
             clusters_coord: nX3 numpy array ([x1,y1,z1],[x2,y2,z2], ... )
         """
         
-        clusters_coord = np.array([[i.get_data()[0][0],i.get_data()[1][0],
-                                  self.data[int(i.get_data()[1][0])][int(i.get_data()[0][0])]] for i in pickable_artists])
+        #clusters_coord = np.array([[i.get_data()[0][0],i.get_data()[1][0],self.data[int(i.get_data()[1][0])][int(i.get_data()[0][0])]] for i in pickable_artists])
+        clusters_coord = np.array([[b[0][0],b[1][0],self.data[int(b[1][0])][int(b[0][0])]] for b in [i.get_data() for i in pickable_artists]])
+        if max_crawler:
+            self.cluster_coords_walk_to_extrema(pixelRange = pixelRange,  extrema = extrema)
         if xyz:
             if any(isinstance(el, list) for el in xyz): ### only if it is list of lists
                 new_xyz = []
@@ -748,7 +751,7 @@ class clusterpic():
                     new_xyz = self.walk_to_the_extrema(self.data,xyz, extrema = extrema)[0]
                     clusters_coord = np.vstack((clusters_coord,np.array(new_xyz)))
                 else:
-                    clusters_coord = np.vstack((clusters_coord,np.array([int(xyz[0]),int(xyz[1]),self.data[int(xyz[0])][int(xyz[1])]])))
+                    clusters_coord = np.vstack((clusters_coord,np.array([int(xyz[0]),int(xyz[1]),self.data[int(xyz[1])][int(xyz[0])]])))
         clusters_coord = np.unique(clusters_coord, axis = 0) ### erase duplicates
         self.clusters_coord = clusters_coord
 
@@ -1235,6 +1238,7 @@ class clusterpic():
                     pickable_artists.append(pt)
                     removable.append(new_max)
                     ax.set_title(f'initial x,y = {int(x)},{int(y)},\n final max = {new_max[0]},\n iteration nr = {new_max[-1]}')
+                    
                 else:
                     removable.append(remove)
                     pickable_artists.remove(remove[-1])
