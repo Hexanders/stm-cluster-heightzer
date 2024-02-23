@@ -179,7 +179,40 @@ class clusterpic():
         with open(path_to_pickle, "rb") as input_file:
             self.clusters_coord = pickle.load(input_file)
 
-    
+    def cluster_coords_walk_to_extrema(self, pixelRange = 2,  extrema = 'max'):
+        """
+        Update cluster coordinates to the nearest extrema points within a specified pixel range.
+
+        This method iterates through each cluster coordinate and finds the nearest extrema point
+        within a given pixel range by calling the 'walk_to_the_extrema' method. The type of extrema
+        point to search for (maximum or minimum) can be specified using the 'extrema' parameter.
+        If the cluster coordinate is updated to a different extrema point, it prints the change
+        and updates the cluster coordinate.
+
+        Args:
+            pixelRange (int, optional): The maximum pixel range to search for extrema points (default is 2).
+            extrema (str, optional): The type of extrema point to search for. 
+                Can be 'max' for maximum or 'min' for minimum (default is 'max').
+
+        Returns:
+            None
+
+        Note:
+            This method modifies the 'clusters_coord' attribute of the object if any cluster coordinate
+            is updated to a different extrema point within the specified pixel range.
+
+        """
+        new_clusters_coord = []
+        trigger = False
+        for nr, i in enumerate(self.clusters_coord):
+            heyho = self.walk_to_the_extrema(self.data, [int(i[0]), int(i[1]), i[2]],  extrema = extrema,  pixelRange=pixelRange)[0]
+            new_clusters_coord.append(heyho)
+            if heyho != [int(i[0]), int(i[1]), i[2]]:
+                print(f'{nr}:{[int(i[0]), int(i[1]), i[2]]} -> {heyho}:diff: {np.array(i)-np.array(heyho)}')
+                trigger = True
+        if trigger:
+            self.clusters_coord = np.array(new_clusters_coord)
+        
     def walk_to_the_extrema(self,test_data, xyz_current_max, extrema = 'max', pixelRange = 2):
         """
         Finds locle maxima by slicing test_data (NXN array) here STM image data with a window of +- PixelRange in first and second dimension. 
@@ -195,6 +228,7 @@ class clusterpic():
         suspect = xyz_current_max#[1],xyz_current_max[0], xyz_current_max[2]
         step_counter = 0
         while no_new_extrema_found:
+            
             step_counter +=1
             y_range = [suspect[0]-pixelRange, suspect[0]+pixelRange]
             if y_range[0] < 0:y_range[0] = 0 # if you hit the boundaries important for correction later see maxXX
@@ -202,7 +236,10 @@ class clusterpic():
             x_range = [suspect[1]-pixelRange, suspect[1]+pixelRange] # if you hit the boundaries
             if x_range[0] < 0 : x_range[0] = 0  # if you hit the boundaries
             if x_range[1] > test_data.shape[1] : x_range[1] = test_data.shape[1] # if you hit the boundaries
+
             aslice = test_data[x_range[0]:x_range[1],y_range[0]:y_range[1]]
+            #print(test_data.shape,x_range[0],x_range[1],y_range[0],y_range[1])
+            #aslice = test_data[y_range[0]:y_range[1],x_range[0]:x_range[1]]
             if extrema == 'min':
                 extremaX, extremaY = np.unravel_index(aslice.argmin(), aslice.shape) ## finde maximum ids in 2d array slice
             else:
@@ -225,9 +262,8 @@ class clusterpic():
                     #no_new_max_found = False
                 else:
                     no_new_extrema_found = False
+        return suspect, y_range, x_range, aslice, step_counter
 
-        return suspect,y_range,x_range, aslice, step_counter
-    
     def find_peaks_in_rows(self, 
                            prominence = 0.6E-09,
                            distance = 1,
@@ -695,6 +731,7 @@ class clusterpic():
         Returns:
             clusters_coord: nX3 numpy array ([x1,y1,z1],[x2,y2,z2], ... )
         """
+        
         clusters_coord = np.array([[i.get_data()[0][0],i.get_data()[1][0],
                                   self.data[int(i.get_data()[1][0])][int(i.get_data()[0][0])]] for i in pickable_artists])
         if xyz:
@@ -1185,27 +1222,26 @@ class clusterpic():
 
         removable = []
     
-        def onclick(event,pickable_artists,gwy_data, extrema = extrema):
+        def onclick(event,pickable_artists,gwy_data,  pixelRange = pixelRange, extrema = extrema):       
             if event.inaxes is not None and not hasattr(event, 'already_picked'):
                 ax = event.inaxes
-
                 remove = [artist for artist in pickable_artists if artist.contains(event)[0]]
-
+                
                 if not remove:
                     # add a pt        
                     x, y = ax.transData.inverted().transform_point([event.x, event.y])
-                    new_max = self.walk_to_the_extrema(self.data,[int(x),int(y),self.data[int(x)][int(y)]],pixelRange=pixelRange, extrema = extrema)
+                    new_max = self.walk_to_the_extrema(self.data,[int(x),int(y),self.data[int(y)][int(x)]], pixelRange=pixelRange, extrema = extrema)
                     pt, = ax.plot(new_max[0][0], new_max[0][1], 'o', picker=pikerRange, c='r')
                     pickable_artists.append(pt)
                     removable.append(new_max)
-
+                    ax.set_title(f'initial x,y = {int(x)},{int(y)},\n final max = {new_max[0]},\n iteration nr = {new_max[-1]}')
                 else:
                     removable.append(remove)
                     pickable_artists.remove(remove[-1])
                     for artist in remove:
                         artist.remove()
                 plt.draw()
-        self.cid = fig.canvas.mpl_connect('button_press_event',lambda event: onclick(event,pickable_artists,self.data, extrema = extrema))
+        self.cid = fig.canvas.mpl_connect('button_press_event',lambda event: onclick(event,pickable_artists,self.data, pixelRange= pixelRange, extrema = extrema))
 
         # ax.set_xlim(vor.min_bound[0] - 10, vor.max_bound[0] + 10)
         # ax.set_ylim(vor.min_bound[1] - 10, vor.max_bound[1] + 10)
