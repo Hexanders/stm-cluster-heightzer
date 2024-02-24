@@ -5,7 +5,7 @@ from IPython.display import Image
 import siunits as siu
 from scipy import constants as const
 from typing import Callable
-
+import numpy as np 
 def atoms_in_trancated_sphere_hm(tau:float, h:float, rho:float, atomic_mass:float):
     '''
     Calculate quantity of atoms in volume of trunkated sphere like in Ingo Barke Diss
@@ -203,7 +203,7 @@ def calc_tau_with_error(clheights: list = [],
     del_tau_ellips_plus = tau_ellips[0][0] - optimize.fsolve(finde_atoms_in_V_root,1., 
                                                      args=(atoms_in_geometry,
                                                           clheights,
-                                                          rho_bi,
+                                                          densety,
                                                           atom_mass,
                                                           atoms_in_persentage_ML - atoms_in_persentage_ML*ML_delta),
                                                      full_output=True)[0][0]
