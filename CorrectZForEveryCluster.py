@@ -721,7 +721,13 @@ class clusterpic():
         self.clusters_coord = clusters_coord
         
         
-    def update_peaked_clusters(self, pickable_artists, xyz =None, max_crawler = False, pixelRange = 2, extrema = 'max'):
+    def update_peaked_clusters(self,
+                               pickable_artists,
+                               xyz =None,
+                               max_crawler = False,
+                               pixelRange = 2,
+                               extrema = 'max'
+                               ):
         """
         Updates the list of clusters withch was peakt by cluster_peaker() or by given list xyz
         Parameters:
@@ -733,6 +739,7 @@ class clusterpic():
             clusters_coord: nX3 numpy array ([x1,y1,z1],[x2,y2,z2], ... )
         """
         
+
         #clusters_coord = np.array([[i.get_data()[0][0],i.get_data()[1][0],self.data[int(i.get_data()[1][0])][int(i.get_data()[0][0])]] for i in pickable_artists])
         clusters_coord = np.array([[b[0][0],b[1][0],self.data[int(b[1][0])][int(b[0][0])]] for b in [i.get_data() for i in pickable_artists]])
         if max_crawler:

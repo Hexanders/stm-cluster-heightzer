@@ -219,6 +219,7 @@ class region():
     def plot_ground_level(self, 
                           figsize = (10,8),
                          axis_view = None,
+                          title_sufix = '',
                          show_all_ground_level_points = True,
                         round_digis = 3,
                          saveimage =None,
@@ -291,9 +292,9 @@ class region():
                         label  ='center' )
         ax4.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         if (not self.cluster_peak_coordinates[2]) or (not self.true_hight) or (not self.true_hight_closest_ground_level) or (not self.true_hight_heighest_ground_level):
-            fig.suptitle(f'Region Nr: {self.region_id}')
+            fig.suptitle(f'Region Nr: {self.region_id} {title_sufix}')
         else:
-            fig.suptitle(f'Region Nr: {self.region_id} \n z:%s h_average:%s, h_closest: %s, h_highest: %s, h_lowest: %s' %
+            fig.suptitle(f'Region Nr: {self.region_id} {title_sufix} \n z:%s h_average:%s, h_closest: %s, h_highest: %s, h_lowest: %s' %
                                                                 ('{:0.3e}'.format(self.cluster_peak_coordinates[2]), 
                                                                  '{:0.3e}'.format(self.true_hight),
                                                                  
