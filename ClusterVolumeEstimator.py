@@ -155,7 +155,8 @@ def calc_tau_with_error(clheights: list = [],
                         ML_delta: float = None, 
                         atoms_per_sqM :float= None,
                         atom_mass: float = None,
-                        densety: float = None, 
+                        densety: float = None,
+                        heits_erro_persent = 0,
                        atoms_in_geometry: Callable = atoms_in_ellipsoid_sym):
     
    
@@ -202,19 +203,19 @@ def calc_tau_with_error(clheights: list = [],
     
     del_tau_ellips_plus = tau_ellips[0][0] - optimize.fsolve(finde_atoms_in_V_root,1., 
                                                      args=(atoms_in_geometry,
-                                                          clheights,
-                                                          densety,
-                                                          atom_mass,
-                                                          atoms_in_persentage_ML - atoms_in_persentage_ML*ML_delta),
-                                                     full_output=True)[0][0]
-    
-    del_tau_ellips_minus = -tau_ellips[0][0] + optimize.fsolve(finde_atoms_in_V_root,1., 
-                                                     args=(atoms_in_geometry,
-                                                          clheights,
+                                                          clheights-clheights*heits_erro_persent,
                                                           densety,
                                                           atom_mass,
                                                           atoms_in_persentage_ML + atoms_in_persentage_ML*ML_delta),
                                                      full_output=True)[0][0]
+    
+    del_tau_ellips_minus = -tau_ellips[0][0] + optimize.fsolve(finde_atoms_in_V_root,1., 
+                                                     args=(atoms_in_geometry,
+                                                          clheights+clheights*heits_erro_persent,
+                                                          densety,
+                                                          atom_mass,
+                                                          atoms_in_persentage_ML - atoms_in_persentage_ML*ML_delta),
+                                                     full_output=True)[0][0]
     del_tau_h = (del_tau_ellips_minus + del_tau_ellips_plus)/2### mittelwert aus dem mximalen und minimalen wert der Fehler
     tau_ellips_err = np.sqrt( del_tau**2. + del_tau_h**2.) 
-    return {'tau':tau_ellips[0][0], 'tau_err':tau_ellips_err,'result_otimization_for_tau': tau_ellips}
+    return {'tau':tau_ellips[0][0], 'tau_err':tau_ellips_err,'tau_plus:':del_tau_ellips_minus, 'tau_minus':del_tau_ellips_plus, 'result_otimization_for_tau': tau_ellips}
