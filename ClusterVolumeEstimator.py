@@ -219,3 +219,102 @@ def calc_tau_with_error(clheights: list = [],
     del_tau_h = (del_tau_ellips_minus + del_tau_ellips_plus)/2### mittelwert aus dem mximalen und minimalen wert der Fehler
     tau_ellips_err = np.sqrt( del_tau**2. + del_tau_h**2.) 
     return {'tau':tau_ellips[0][0], 'tau_err':tau_ellips_err,'tau_plus:':del_tau_ellips_minus, 'tau_minus':del_tau_ellips_plus, 'result_otimization_for_tau': tau_ellips}
+def capacity_ellipsoid(a,h):
+    """
+    Calculate the capacity of an ellipsoid with axis lengths a, b, and c.
+
+    This function calculates the electrical capacity of an ellipsoid, where:
+    - a is the ellipsoid axis parallel to the surface,
+    - h is the height of the cluster (and also the ellipsoid axis perpendicular to the surface).
+
+    Args:
+        a (float): Length of the ellipsoid axis parallel to the surface.
+        h (float): Height of the cluster (and also the ellipsoid axis perpendicular to the surface).
+
+    Returns:
+        float: The capacity of the ellipsoid.
+
+    Note:
+        The formula used for calculating the capacity of the ellipsoid is derived from electrostatics.
+        It assumes that 'a' is greater than 'h' and that 'a' and 'h' are equal if the ellipsoid is a sphere.
+    """
+    return 4.*const.pi*const.epsilon_0* ( np.sqrt( (a/2.)**2. - (h/2.)**2. ) ) /  ( (const.pi/2.) - np.arctan( ( h/2. )/np.sqrt( (a/2.)**2. -(h/2.)**2.) )  )
+    
+def delta_capacity_ellipsoid(a, del_a, h , del_h):
+    """
+    Calculate the error in the capacity of an ellipsoid with error propagation.
+
+    This function calculates the error in the electrical capacity of an ellipsoid
+    by considering the errors in the input parameters a and h, based on error propagation.
+
+    Args:
+        a (float): Length of the ellipsoid axis parallel to the surface.
+        del_a (float): Error in the length of the ellipsoid axis parallel to the surface.
+        h (float): Height of the cluster (and also the ellipsoid axis perpendicular to the surface).
+        del_h (float): Error in the height of the cluster.
+
+    Returns:
+        float: The deviation in the capacity of the ellipsoid.
+
+    Note:
+        This function uses error propagation techniques to estimate the deviation in the capacity
+        of the ellipsoid based on the errors in the input parameters a and h.
+    """
+    epsilon_0 = const.physical_constants['vacuum electric permittivity'][0]
+    del_epsilon_0 = const.physical_constants['vacuum electric permittivity'][2]
+    kappa = np.sqrt(a**2.-h**2.)
+
+    ###  partial derivation of h
+    part_one = epsilon_0 * ( 4.*const.pi*h/( kappa* (2.* np.arctan(h/kappa) - const.pi) ) +
+    
+                             8.*const.pi /( 2.* np.arctan(h/kappa) - const.pi)
+                           )
+    ###  partial derivation of a splittet in sub parts 1 and 2 for clarity
+    part_two1 = 4.*const.pi*epsilon_0*(-2.*h*kappa - 2.*a**2. *np.arctan(h/kappa) +const.pi*a**2.)
+    
+    part_two2 = a * kappa *(const.pi -2.*np.arctan(h/kappa))**2. 
+    
+    part_two = part_two1 / part_two2
+    
+    ###  partial derivation of epsilon_0
+    part_tree =  2.*const.pi*kappa / ( const.pi/2. - np.arctan(h/kappa) )
+    
+    return np.sqrt( part_one**2. * del_h**2.  + part_two**2. * del_a**2. + part_tree**2.*del_epsilon_0**2.)
+
+def capacity_sphere(h):
+    """
+    Calculate the capacity of a sphere with a given radius.
+
+    This function computes the electrical capacity of a sphere with a radius 'h/2',
+    where 'h' represents the diameter of the sphere.
+
+    Args:
+        h (float): Diameter of the sphere.
+
+    Returns:
+        float: The capacity of the sphere.
+
+    Note:
+        The formula used for calculating the capacity of the sphere is derived from electrostatics.
+        It assumes that the sphere is composed of a uniform material and has no charge distribution.
+    """
+    return 4.*const.pi*const.epsilon_0 * ( h/2. )
+
+def delta_capacity_sphere(delh):
+    """
+    Calculate the error in the capacity of a sphere with error propagation.
+
+    This function computes the deviation in the electrical capacity of a sphere with
+    error propagation based on the error in the diameter 'delh'.
+
+    Args:
+        delh (float): Error in the diameter of the sphere.
+
+    Returns:
+        float: The deviation in the capacity of the sphere.
+
+    Note:
+        This function assumes that the sphere is composed of a uniform material and has no charge distribution.
+    """
+    return 4.*const.pi*const.epsilon_0 * ( delh/2. )
+    
