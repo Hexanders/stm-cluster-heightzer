@@ -318,3 +318,40 @@ def delta_capacity_sphere(delh):
     """
     return 4.*const.pi*const.epsilon_0 * ( delh/2. )
     
+def surface_capacitance_shpere(r,h, sum_end = 10000):
+    """
+    based on https://solar.physics.montana.edu/dana/ph519/sph_cap.pdf
+    r sphere radius
+    h distance between sphere center and surface, so basicaly h = d+r, wiht d distance from shere to surface 
+    """
+    """
+    Calculate the "surface" capacitance of a sphere (meaning capacitance of the sphere induced by the surface).
+
+    This function computes the surface capacitance of a sphere using the formula provided
+    in the reference: https://solar.physics.montana.edu/dana/ph519/sph_cap.pdf
+
+    Args:
+        r (float): Radius of the sphere.
+        h (float): Distance between the sphere center and the surface.
+                   It's essentially the sum of the radius and the distance from the sphere to the surface.
+        sum_end (int): Number of terms in the summation for calculating the function F_of_psi. 
+                       Higher values provide more accurate results at the cost of increased computation time.
+                       Default is 10000.
+
+    Returns:
+        float: The surface capacitance of the sphere.
+
+    Note:
+        This function assumes that the sphere is composed of a uniform material and has no charge distribution.
+        The surface capacitance is calculated based on the formula provided in the referenced document.
+    """
+    epsilon_0 = const.physical_constants['vacuum electric permittivity'][0]
+    del_epsilon_0 = const.physical_constants['vacuum electric permittivity'][2]
+    def F_of_psi(psi,sum_end = sum_end):
+        n = 0
+        summu_jammy = 0.
+        while n <= sum_end:
+            summu_jammy += (1/np.sinh((n+1)*psi))
+            n += 1
+        return np.sinh(psi)*summu_jammy
+    return 4*np.pi*epsilon_0*r*F_of_psi(np.arccosh(h/r))
