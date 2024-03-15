@@ -132,9 +132,9 @@ class clusterpic():
             print('You try to dump empty pandas.DataFrame \n So no data for cluster heights were found. Run first finde_peaks_in_row(), group_clusters() or load cluster coordinates from pickle by runing load_dumped_clusters() and then calc_true_height_4_every_region()')
         else:
             if prefix:
-                dump_path = '[%s]%s_cluster_heights.pkl' %( str(prefix) , self.name)
+                dump_path = f'{prefix}.pkl'
             else:
-                dump_path = '%s_cluster_heights.pkl' %(self.name)
+                dump_path = f'{self.name}_cluster_heights.pkl'
             if folder:
                 dump_path = folder+dump_path
             with open(dump_path, 'wb') as pickle_file:
@@ -159,7 +159,7 @@ class clusterpic():
             print('You try to dump empty array \n So no coordinates for cluster were found. Run first finde_peaks_in_row(), group_clusters() or load cluster coordinates from pickle by runing load_dumped_clusters()')
         else:
             if prefix:
-                dump_path = '[%s]%s_cluster_coordinates.pkl' %( str(prefix) , self.name)
+                dump_path = f'{prefix}.pkl'
             else:
                 dump_path = '%s_cluster_coordinates.pkl' %(self.name)
             if folder:
@@ -356,37 +356,37 @@ class clusterpic():
                   cl_numb_fontsize = 8
                   ):
         """
-    Plots the scanning tunneling microscope (STM) data.
+        Plots the scanning tunneling microscope (STM) data.
 
-    Parameters:
-    -----------
-    cmap: str
-        The colormap used for the plot. Default is 'gray'.
-    
-    mask: list of lists:
-        Plots only regions inside the numbers e.g. a,b for mask =[[a,b], [a1,b1], ...] 
-    bar: bool
-        Whether to show a bar on the plot or not. Default is True.
-    bar_space_left: float
-        The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
-    bar_space_bottom: float
-        The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
-    bar_length: float
-        The length of the bar in nanometers. Default is 100.
-    bar_color: str
-        The color of the bar. Default is 'white'.
-    bar_size: float
-        The width of the bar in points. Default is 10.
-    unit: str
-        The unit for the axis labels. Default is 'nm'. Available are '$\mu$m' and $\AA$ for 10^-6 and 10^-10 m 
-    no_ticks: bool
-        Whether to show axis ticks or not. Default is False.
+        Parameters:
+        -----------
+        cmap: str
+            The colormap used for the plot. Default is 'gray'.
 
-    Returns:
-    --------
-    fig, ax: tuple
-        The figure and axis objects of the plot.
-    """
+        mask: list of lists:
+            Plots only regions inside the numbers e.g. a,b for mask =[[a,b], [a1,b1], ...] 
+        bar: bool
+            Whether to show a bar on the plot or not. Default is True.
+        bar_space_left: float
+            The space from the left side of the plot to the bar, as a percentage of the x range. Default is 0.05.
+        bar_space_bottom: float
+            The space from the bottom of the plot to the bar, as a percentage of the y range. Default is 0.05.
+        bar_length: float
+            The length of the bar in nanometers. Default is 100.
+        bar_color: str
+            The color of the bar. Default is 'white'.
+        bar_size: float
+            The width of the bar in points. Default is 10.
+        unit: str
+            The unit for the axis labels. Default is 'nm'. Available are '$\\mu$m' and $\\AA$ for 10^-6 and 10^-10 m 
+        no_ticks: bool
+            Whether to show axis ticks or not. Default is False.
+
+        Returns:
+        --------
+        fig, ax: tuple
+            The figure and axis objects of the plot.
+        """
         from matplotlib import ticker as mpl_ticker
         if not ax:
             fig, ax = plt.subplots()
@@ -394,11 +394,11 @@ class clusterpic():
         multiplier = 1
         if not bar_length:
             match unit:
-                case '$\AA$':
+                case r'$\AA$':
                     multiplier = 1e10
-                case 'nm':
+                case r'nm':
                     multiplier = 1e9
-                case '$\mu$m':
+                case r'$\mu$m':
                     multiplier = 1e6
                     
             bar_length = round(self.xreal*0.1*multiplier)
@@ -451,11 +451,11 @@ class clusterpic():
                              color = bar_color,
                         fontsize = latex_font if mode == 'latex' else 8, )
         
-        if unit == 'nm':
+        if unit == r'nm':
             func = lambda x,pos: "{:g}".format(x*1e9)
-        if unit == '$\mu$m':
+        if unit == r'$\mu$m':
             func = lambda x,pos: "{:g}".format(x*1e6)
-        if unit == '$\AA$':
+        if unit == r'$\AA$':
             func = lambda x,pos: "{:g}".format(x*1e10)
         
         

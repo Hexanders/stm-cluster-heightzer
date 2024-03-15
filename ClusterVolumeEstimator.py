@@ -318,7 +318,7 @@ def delta_capacity_sphere(delh):
     """
     return 4.*const.pi*const.epsilon_0 * ( delh/2. )
     
-def surface_capacitance_shpere(r,h, sum_end = 10000):
+def surface_capacitance_shpere(r,h, sum_end = 5000):
     """
     based on https://solar.physics.montana.edu/dana/ph519/sph_cap.pdf
     r sphere radius
@@ -355,3 +355,9 @@ def surface_capacitance_shpere(r,h, sum_end = 10000):
             n += 1
         return np.sinh(psi)*summu_jammy
     return 4*np.pi*epsilon_0*r*F_of_psi(np.arccosh(h/r))
+
+def radius_of_spher_volume(v):
+    """
+    Returns radius of the spher with the given volume v
+    """
+    return (v*3./(4.*np.pi))**(1./3.)
