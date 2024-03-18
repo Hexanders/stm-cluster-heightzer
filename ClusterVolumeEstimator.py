@@ -356,8 +356,96 @@ def surface_capacitance_shpere(r,h, sum_end = 5000):
         return np.sinh(psi)*summu_jammy
     return 4*np.pi*epsilon_0*r*F_of_psi(np.arccosh(h/r))
 
+def surface_capacitance_shpere_with_errors(r, h, delr=None, delh = None, sum_end = 5000):
+    """
+    based on https://solar.physics.montana.edu/dana/ph519/sph_cap.pdf
+    r sphere radius
+    h distance between sphere surface and surface of the substrate, so basicaly d = h - r, with d distance from sphere center to surface 
+    """
+    """
+    Calculate the "surface" capacitance of a sphere (meaning capacitance of the sphere induced by the surface).
+
+    This function computes the surface capacitance of a sphere using the formula provided
+    in the reference: https://solar.physics.montana.edu/dana/ph519/sph_cap.pdf
+
+    Args:
+        r (float): Radius of the sphere.
+        h (float): Distance between the sphere center and the surface.
+                   It's essentially the sum of the radius and the distance from the sphere to the surface.
+        sum_end (int): Number of terms in the summation for calculating the function F_of_psi. 
+                       Higher values provide more accurate results at the cost of increased computation time.
+                       Default is 10000.
+
+    Returns:
+        float: The surface capacitance of the sphere.
+
+    Note:
+        This function assumes that the sphere is composed of a uniform material and has no charge distribution.
+        The surface capacitance is calculated based on the formula provided in the referenced document.
+    """
+    epsilon_0 = const.physical_constants['vacuum electric permittivity'][0]
+    del_epsilon_0 = const.physical_constants['vacuum electric permittivity'][2]
+    kapa = 4.*np.pi*epsilon_0
+    d = h + r
+    def F_of_psi(psi,sum_end = sum_end):
+        n = 0
+        summu_jammy = 0.
+        while n <= sum_end:
+            summu_jammy += (1/np.sinh((n+1)*psi))
+            n += 1
+        return summu_jammy
+    
+    # def del_R_of_sum(psi,d=d,r=r,sum_end = sum_end):
+    #     n = 0
+    #     summu_jammy = 0.
+    #     while n <= sum_end:
+    #         summu_jammy += (d*(n+1) * ( 1/ np.tanh( (n+1) * psi ) ) ) / ( r**2 * np.sqrt( (d/r) -1. ) * np.sqrt( (d+r)/r  ) * np.sinh( (n+1) * psi ) )
+    #         n += 1
+    #     return summu_jammy
+    
+    # def del_D_of_sum(psi,d=d,r=r,sum_end = sum_end):
+    #     n = 0
+    #     summu_jammy = 0.
+    #     while n <= sum_end:
+    #         summu_jammy += ( (n+1)*(1/np.tanh((n+1)*psi) ) ) / ( r*np.sqrt((d/r)-1)*np.sqrt((d+r)/r) * np.sinh((n+1)*psi))
+    #         n += 1
+    #     return summu_jammy
+
+    def del_of_sum(psi,sum_end = sum_end):
+        n = 0
+        summu_jammy = 0.
+        while n <= sum_end:
+            summu_jammy += (n+1) / ( np.tanh((n+1)*psi) * np.sinh((n+1)*psi) )
+            n += 1
+        return summu_jammy
+    if delh or delr:
+        psi = np.arccosh(d/r)
+        del_of_sum_result =  del_of_sum(psi) / (np.sqrt((d/r)-1)*np.sqrt((d+r)/r))
+        if delr == None:
+            delr = .0
+        else:
+            first_a = np.sinh(psi) * F_of_psi(psi)
+            first_b = r * F_of_psi(np.arccosh(d/r)) * (d**2. / (r**2. * np.sqrt( (d-r)/(d+r) ) *(d+r) ) )
+            first_c = r * np.sinh(psi) * (d / r**2.) * del_of_sum_result
+        if delh == None:
+            delh = .0
+        else:
+            second_a = r * ( d /( r * np.sqrt( (d-r)/(d+r) ) * (d+r) ) ) * F_of_psi(psi)  
+            second_b = r *  np.sinh(psi) * (del_of_sum_result/r)
+            
+        first = kapa * (first_a + first_b + first_c)
+        second = kapa * (second_a + second_b)
+        errors = np.sqrt(first**2.*delr**2. + second **2.*delh**2. )
+    else:
+        errors = 0.0
+    return (4*np.pi*epsilon_0*r*np.sinh(psi)*F_of_psi(psi) , errors) 
+
 def radius_of_spher_volume(v):
     """
     Returns radius of the spher with the given volume v
     """
     return (v*3./(4.*np.pi))**(1./3.)
+
+def C_ell_overC_spher(tau):
+    x = np.sqrt(tau**2.-1.)
+    return (x * tau**(-2./3.)) / (np.pi/2.-np.arctan(1/x))
