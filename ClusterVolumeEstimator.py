@@ -44,7 +44,7 @@ def atoms_in_simple_sphere(tau:float, h:float, rho:float, atomic_mass:float):
     return 4./3.*pi*(h/2)**3. * rho / atomic_mass
 
 
-def V_ellipsoid_sym(tau:float, h:float):
+def V_ellipsoid_sym(tau:float, h:float, deltau:float = 0.0, delh:float = 0.0):
     '''
     Calculate volume of Elepsoid. V = 4/3 * pi *  a *  b * c
     assumption : a = b = tau*c, with c = 1/2 *h 
@@ -53,7 +53,9 @@ def V_ellipsoid_sym(tau:float, h:float):
         tau: factor see above
         h: height of cluster
     '''
-    return 1/6 * pi * tau **2. * h**3.
+    Volume = 1/6 * pi * tau **2. * h**3.
+    Volume_err = np.sqrt((1/3. * pi * tau * h**3.)**2. * deltau**2. + (1./2 * pi * tau **2. * h**2.)**2. * delh**2.)
+    return (Volume, Volume_err)
 
 def atoms_in_ellipsoid_sym(tau:float, h:float, rho:float, atomic_mass:float):
     '''
@@ -281,7 +283,7 @@ def delta_capacity_ellipsoid(a, del_a, h , del_h):
     
     return np.sqrt( part_one**2. * del_h**2.  + part_two**2. * del_a**2. + part_tree**2.*del_epsilon_0**2.)
 
-def capacity_sphere(h):
+def capacity_sphere(h:float, delh:float = 0.0):
     """
     Calculate the capacity of a sphere with a given radius.
 
@@ -298,7 +300,9 @@ def capacity_sphere(h):
         The formula used for calculating the capacity of the sphere is derived from electrostatics.
         It assumes that the sphere is composed of a uniform material and has no charge distribution.
     """
-    return 4.*const.pi*const.epsilon_0 * ( h/2. )
+    c = 4.*const.pi*const.epsilon_0 * ( h/2. )
+    c_err = 4.*const.pi*const.epsilon_0 * ( 1/2. )*delh
+    return (c,c_err)
 
 def delta_capacity_sphere(delh):
     """
@@ -418,8 +422,9 @@ def surface_capacitance_shpere_with_errors(r, h, delr=None, delh = None, sum_end
             summu_jammy += (n+1) / ( np.tanh((n+1)*psi) * np.sinh((n+1)*psi) )
             n += 1
         return summu_jammy
+    psi = np.arccosh(d/r)
+    
     if delh or delr:
-        psi = np.arccosh(d/r)
         del_of_sum_result =  del_of_sum(psi) / (np.sqrt((d/r)-1)*np.sqrt((d+r)/r))
         if delr == None:
             delr = .0
@@ -440,12 +445,15 @@ def surface_capacitance_shpere_with_errors(r, h, delr=None, delh = None, sum_end
         errors = 0.0
     return (4*np.pi*epsilon_0*r*np.sinh(psi)*F_of_psi(psi) , errors) 
 
-def radius_of_spher_volume(v):
+def radius_of_spher_volume(v:float, v_err:float = 0.0):
     """
     Returns radius of the spher with the given volume v
     """
-    return (v*3./(4.*np.pi))**(1./3.)
+    radius = (v*3./(4.*np.pi))**(1./3.)
+    radius_err = 1/(6.**(2./3)*(np.pi)**(1/3)* (v)**(2./3))*v_err
+    return (radius, radius_err)
 
-def C_ell_overC_spher(tau):
+def C_ell_overC_spher(tau:float, tau_err:float = 0.0):
     x = np.sqrt(tau**2.-1.)
-    return (x * tau**(-2./3.)) / (np.pi/2.-np.arctan(1/x))
+    error = np.sqrt((x/ (tau**(5./3) *(np.pi/2. - np.arctan(1/x)))) **2. * tau_err**2.)
+    return ( (x * tau**(-2./3.)) / (np.pi/2.-np.arctan(1/x)), error ) 

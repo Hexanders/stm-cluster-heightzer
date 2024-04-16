@@ -79,6 +79,7 @@ class clusterpic():
         self.creat_heights_table()
         #self.heights = pd.DataFrame([])
         self.cluster_distribution = None
+        self.cluster_distribution_balls = None
         self.nearest_neighbors_ditribution = None
         self.slope_map = []
         self.path_profiles ={} # for all profiles on the imshow() between clsuters cuts of the data so to say
@@ -873,6 +874,36 @@ class clusterpic():
                     distribution.append(np.sqrt( (all_coord[k][0] - all_coord[i][0])**2. 
                                             + ( all_coord[k][1]  - all_coord[i][1])**2. ))
         self.cluster_distribution = np.array(distribution)
+        
+    def calc_cluster_distribution_balls(self, height_substraction = 'initial_Z'):
+        """
+        Calculate cluster distribution like in the calc_cluster_distribution but this time subtract the radius of the clusters.
+        Basically distance between outside shells of clusters   
+
+        Parameters:
+           height_substraction: str : default 'initial_Z'
+ 	                              avalible options : 'corrected_Z_averaged', 'corrected_Z_closest_step', 'corrected_Z_highest_step', 'corrected_Z_lowest_step'
+        Returns:
+        --------
+            None
+        """
+        # all_coord = np.array((self.heights['x']*(self.xreal/self.xres),
+        #                       self.heights['y']*(self.yreal/self.yres))).T # prepare 2d array vor surching distance
+                                               
+        # all_coord = np.array((self.heights[f'x_{self.si_unit_xy}'],
+        #                       self.heights[f'y_{self.si_unit_xy}'])).T # prepare 2d array vor surching distance
+        if self.heights.empty:
+            warnings.warn(f"Nothing to do. Height table is empty. Initialize parallel_correct_height() or load the data form .pkl file.") 
+            return None
+        all_coord = self.heights[['x_m','y_m',height_substraction]]
+        distribution = []
+        for items, rows in all_coord.iterrows():
+            for items2, rows2 in all_coord.iterrows():
+                if items!=items2:
+                    the_shit = np.sqrt((rows[0]-rows2[0])**2.) + (rows[1]-rows2[1])**2. - (rows[2]*0.5+ rows2[2]*0.5)
+                    if the_shit >0.:
+                        distribution.append(the_shit)
+        self.cluster_distribution_balls = np.array(distribution)
         
     def calc_nn_distribution(self):
         """
